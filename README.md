@@ -7,15 +7,17 @@ HexPixiJs is a simple library written to give hex grid based game developers a j
 Twitter Bootstrap 3 was used for the main demo page, but is not required to use HexPixiJs. 
 
 Disclaimer
-==========
+----------
 This is not supposed to be and end-all solution for making hex grid based games. There is currently no documentation, but the code is fairly simple so I believe there is value for some developers. 
 
 
-Important Files
-===============
-scripts/hexpixi.js - Contains the HexPixiJS library code.
-scripts/hpdemo.js - This javascript code sets up the main demo page and serves as an example of how to use HexPixiJS.
-index.html - The main demo page.
+Files
+-----
+A brief list and description of the important project files:
+
+* scripts/hexpixi.js -Contains the HexPixiJS library code.
+* scripts/hpdemo.js - This javascript code sets up the main demo page and serves as an example of how to use HexPixiJS.
+* index.html - The main demo page.
 
 
 Feel free to submit contributions.
