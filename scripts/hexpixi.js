@@ -21,7 +21,7 @@
         self.column = columnNo;
         self.center = { x: 0, y: 0 };
         self.terrainIndex = terrainIndex ? terrainIndex : 0;
-        self.text = new PIXI.Text("1", { font: "10px Arial", fill: 0x000000 });
+        self.text = new PIXI.Text("1", { font: "10px Arial", fill: "black", dropShadow: "true", dropShadowDistance: 1, dropShadowColor: "white"});
     };
 
     hp.Map = function (pixiStage, options) {
@@ -86,6 +86,9 @@
 
             parentContainer.addChild(sprite);
             self.hexes.addChild(parentContainer);
+
+            self.cells[cell.row].push(cell);
+            self.hexes.addChild(cell.text);
         }
 
         function getCellCenter(hexSize, column, row, coordinateSystem) {
@@ -142,6 +145,9 @@
             } else {
                 self.drawHex(self.hexes, self.options.hexSize, cell);
             }
+
+            self.cells[cell.row].push(cell);
+            self.hexes.addChild(cell.text);
         }
 
         function loadTextures() {
@@ -177,8 +183,6 @@
                     var rnd = Math.floor((Math.random() * hp.TerrainTypes.length));
                     var cell = new hp.Cell(row, column, rnd);
                     createCell(cell);
-                    self.cells[row].push(cell);
-                    self.hexes.addChild(cell.text);
                 }
             }
         };
@@ -189,8 +193,6 @@
                 for (var column = 0; column < self.options.mapWidth; column++) {
                     var cell = new hp.Cell(row, column, 0);
                     createCell(cell);
-                    self.cells[row].push(cell);
-                    self.hexes.addChild(cell.text);
                 }
             }
         };
