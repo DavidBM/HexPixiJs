@@ -22,6 +22,11 @@ A brief list and description of the important project files:
 * scripts/hpdemo.js - This javascript code sets up the main demo page and serves as an example of how to use HexPixiJS.
 * index.html - The main demo page.
 
+Demo
+----
+Here is a demo page with a basic map generator on it.
+[Map Generator Demo](http://yungsippin.com/hexpixi/)
+
 
 
 Feel free to submit contributions.
