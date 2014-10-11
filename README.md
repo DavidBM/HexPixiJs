@@ -8,7 +8,7 @@ Twitter Bootstrap 3 was used for the main demo page, but is not required to use 
 
 Disclaimer
 ==========
-This is not supposed to be and end-all solution for making hex grid based games. There is currently no documentation, but the code is fairly simple so I believe there is value in this code. 
+This is not supposed to be and end-all solution for making hex grid based games. There is currently no documentation, but the code is fairly simple so I believe there is value for some developers. 
 
 
 Important Files
