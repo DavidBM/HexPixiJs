@@ -135,7 +135,7 @@
 
         function loadTextures() {
             self.textures = [];
-            self.textures.push(new PIXI.Texture.fromImage("/images/game/hex_grass01.png"));
+            self.textures.push(new PIXI.Texture.fromImage("images/game/hex_grass01.png"));
         }
 
         self.reset = function (options) {
