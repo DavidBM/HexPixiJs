@@ -1,0 +1,10 @@
+﻿body {
+  padding-top: 50px;
+}
+#stage
+{
+    background-color: #ffffff;
+    margin: 20px 0 0;
+    width:800px;
+    height: 800px;
+}
