@@ -68,13 +68,24 @@
             graphic.endFill();
         }
 
-        function createSpriteHex(cell) {
-            var sprite = new PIXI.Sprite(self.textures[hp.TerrainTypes[cell.terrainIndex].textureIndex]);
-            sprite.position.x = cell.center.x;
-            sprite.position.y = cell.center.y;
-            sprite.anchor.x = 0.5;
-            sprite.anchor.y = 0.5;
-            self.hexes.addChild(sprite);
+        function createTexturedHex(cell) {
+            var sprite = new PIXI.Sprite(self.textures[hp.TerrainTypes[cell.terrainIndex].textureIndex]),
+                cs = hp.CoordinateSystems[self.options.coordinateSystem],
+                parentContainer = new PIXI.DisplayObjectContainer();
+
+            if (!cs.isFlatTop) {
+                sprite.anchor.x = 0.5;
+                sprite.anchor.y = 0.5;
+                sprite.rotation = 0.523598776; // 30 degrees in radians
+                parentContainer.position.x = cell.center.x;
+                parentContainer.position.y = cell.center.y;
+            } else {
+                parentContainer.position.x = cell.center.x - (sprite.width / 2);
+                parentContainer.position.y = cell.center.y - (sprite.height / 2);
+            }
+
+            parentContainer.addChild(sprite);
+            self.hexes.addChild(parentContainer);
         }
 
         function getCellCenter(hexSize, column, row, coordinateSystem) {
@@ -83,7 +94,7 @@
                 incX = Math.round(3 / 4 * width),
                 incY = height,
                 cs = hp.CoordinateSystems[coordinateSystem],
-                center = {x:0, y:0, width: width, height: height };
+                center = { x: 0, y: 0, width: width, height: height };
 
             if (cs.isFlatTop) {
                 var offset = (cs.isOdd) ? 0 : 1;
@@ -101,7 +112,7 @@
                 incX = width;
                 incY = Math.round(3 / 4 * height);
 
-                center.y = (row * incY) + (height/2);
+                center.y = (row * incY) + (height / 2);
 
                 var offset = (cs.isOdd) ? 1 : 0;
                 if ((row + offset) % 2) {
@@ -127,7 +138,7 @@
             cell.text.position.y = Math.round(cell.center.y - (height / 2) + 4);
 
             if (hp.TerrainTypes[cell.terrainIndex].textureIndex >= 0) {
-                createSpriteHex(cell);
+                createTexturedHex(cell);
             } else {
                 self.drawHex(self.hexes, self.options.hexSize, cell);
             }
