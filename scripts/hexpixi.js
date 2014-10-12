@@ -14,8 +14,8 @@
         { name: "dirt", moveMod: 0, color: 0x9B5523 },
         { name: "sand", moveMod: 0, color: 0xdBd588 },
         { name: "snow", moveMod: 0, color: 0xebebfa },
-        { name: "water", moveMod: 0, color: 0x5585f8 }
-        , { name: "grasst1", moveMod: 0, textureIndex: 0 }
+        { name: "water", moveMod: 0, textureIndex: 1, color: 0x5585f8 }
+        , { name: "grass", moveMod: 0, textureIndex: 0 }
     ];
 
     hp.Cell = function (rowNo, columnNo, terrainIndex) {
@@ -32,7 +32,7 @@
                 coordinateSystem: 1,
                 mapWidth: 10,
                 mapHeight: 10,
-                hexSize: 30,
+                hexSize: 40,
                 hexSizeHeightRatio: 1,
                 hexLineColor: 0x909090,
                 hexLineWidth: 2,
@@ -84,12 +84,12 @@
         }
 
         // Use for creating a hex cell with a textured background.
-        function createTexturedHex(cell, hasOutline) {
+        function createTexturedHex(cell) {
             var sprite = new PIXI.Sprite(self.textures[hp.TerrainTypes[cell.terrainIndex].textureIndex]),
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
                 parentContainer = new PIXI.DisplayObjectContainer(),
                 mask = new PIXI.Graphics(),
-                outline = hasOutline !== false ? new PIXI.Graphics() : null,
+                outline = (self.options.hexLineWidth > 0) ? new PIXI.Graphics() : null,
                 dummyCell = new hp.Cell(0, 0, cell.terrainIndex);
 
             self.drawHex(mask, self.options.hexSize, dummyCell, false, true);
@@ -217,7 +217,7 @@
             if (hp.TerrainTypes[cell.terrainIndex].textureIndex >= 0) {
                 createTexturedHex(cell);
             } else {
-                self.drawHex(self.hexes, self.options.hexSize, cell);
+                self.drawHex(self.hexes, self.options.hexSize, cell, (self.options.hexLineWidth > 0));
             }
 
             self.cells[cell.row].push(cell);
@@ -230,6 +230,7 @@
         function loadTextures() {
             self.textures = [];
             self.textures.push(new PIXI.Texture.fromImage("images/game/grass_texture231.jpg"));
+            self.textures.push(new PIXI.Texture.fromImage("images/game/waterTexture.jpg"));
         }
 
         self.reset = function (options) {

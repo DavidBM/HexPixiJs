@@ -53,6 +53,7 @@
                 <div id="stage"></div>
             </div>
             <div class="col-sm-4">
+                <p>The map settings are not dynamic here, so you will have to press "Make Map" button to see changed settings.</p>
                 <form role="form">
                     <div class="form-group">
 
@@ -65,6 +66,10 @@
                             <input id="mapHeight" type="text" class="form-control" placeholder="map height" value="8" />
                         </div>
                         <div>
+                            <label>Hex cell size</label>
+                            <input id="hexSize" type="text" class="form-control" placeholder="hex size" value="40" />
+                        </div>
+                        <div>
                             <label>Coordinate system</label>
                             <select id="coordinateSystem" class="form-control">
                                 <option value="0">odd-q</option>
@@ -74,6 +79,14 @@
                             </select>
                         </div>
 
+                        <div style="margin-top:10px;">
+                            <input type="checkbox" id="showLines" checked="checked" />
+                            <label>Show hex lines</label>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <input type="checkbox" id="showCoordinates" />
+                            <label>Show hex coordinates</label>
+                        </div>
                         <div style="height: 20px;"></div>
 
                         <div>
