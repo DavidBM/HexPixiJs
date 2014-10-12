@@ -31,7 +31,8 @@
             mapWidth: $("#mapWidth").val(), 
             mapHeight: $("#mapHeight").val(), 
             coordinateSystem: $("#coordinateSystem").val(),
-            hexLineWidth: 3
+            hexLineWidth: 3,
+            showCoordinates: true
         }
     }
 
