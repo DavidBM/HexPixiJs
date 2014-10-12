@@ -5,7 +5,7 @@
     var hp = window.HexPixi = window.HexPixi || {},
         map = null,
         stage = new PIXI.Stage(0xe0e0e0),
-        renderer = new PIXI.autoDetectRenderer($("#stage").width(), $("#stage").height(), null, false, false);
+        renderer = new PIXI.autoDetectRenderer($("#stage").width(), 600, null, false, false);
 
 
     function setupPixiJs() {
@@ -31,7 +31,7 @@
             mapWidth: $("#mapWidth").val(), 
             mapHeight: $("#mapHeight").val(), 
             coordinateSystem: $("#coordinateSystem").val(),
-            hexLineWidth: 2
+            hexLineWidth: 3
         }
     }
 
@@ -41,8 +41,17 @@
         map.generateRandomMap();
     }
 
+    function onResize() {
+        renderer.view.style.width = $("#stage").width() + "px";
+    }
+
     $(document).ready(function () {
         setupPixiJs();
+
+        $(window).on("resize", function () {
+            // todo: debounce
+            onResize();
+        });
 
         $("#makeMapBtn").on("click", makeMap);
         $("#clearMapBtn").on("click", clearMap);

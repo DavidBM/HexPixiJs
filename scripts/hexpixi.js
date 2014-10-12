@@ -11,8 +11,11 @@
 
     hp.TerrainTypes = [
         { name: "empty", moveMod: 0, color: 0xffffff },
-        { name: "brown", moveMod: 0, color: 0x8B4513 },
-        { name: "grasst1", moveMod: 0, textureIndex: 0 }
+        { name: "dirt", moveMod: 0, color: 0x9B5523 },
+        { name: "sand", moveMod: 0, color: 0xdBd588 },
+        { name: "snow", moveMod: 0, color: 0xebebfa },
+        { name: "water", moveMod: 0, color: 0x5585f8 }
+        //, { name: "grasst1", moveMod: 0, textureIndex: 0 }
     ];
 
     hp.Cell = function (rowNo, columnNo, terrainIndex) {
@@ -21,7 +24,6 @@
         self.column = columnNo;
         self.center = { x: 0, y: 0 };
         self.terrainIndex = terrainIndex ? terrainIndex : 0;
-        self.text = new PIXI.Text("1", { font: "10px Arial", fill: "black", dropShadow: "true", dropShadowDistance: 1, dropShadowColor: "white"});
     };
 
     hp.Map = function (pixiStage, options) {
@@ -30,11 +32,11 @@
                 coordinateSystem: 1,
                 mapWidth: 10,
                 mapHeight: 10,
-                hexSize: 40,
+                hexSize: 30,
                 hexSizeHeightRatio: 1,
                 hexLineColor: 0x909090,
-                hexLineWidth: 1,
-                zoomLevel: 1
+                hexLineWidth: 2,
+                showCoordinates: false
             };
 
         self.textures = [];
@@ -55,6 +57,8 @@
                 y = cell.center.y + size * Math.sin(angle),
                 color = hp.TerrainTypes[cell.terrainIndex].color ? hp.TerrainTypes[cell.terrainIndex].color : 0xffffff;
 
+            graphic.lineStyle(self.options.hexLineWidth, self.options.hexLineColor, 1);
+            
             graphic.beginFill(color);
             graphic.moveTo(Math.round(x), Math.round(y));
 
@@ -88,7 +92,9 @@
             self.hexes.addChild(parentContainer);
 
             self.cells[cell.row].push(cell);
-            self.hexes.addChild(cell.text);
+            if (self.options.showCoordinates) {
+                self.hexes.addChild(cell.text);
+            }
         }
 
         function getCellCenter(hexSize, column, row, coordinateSystem) {
@@ -136,9 +142,12 @@
 
             cell.center = getCellCenter(self.options.hexSize, cell.column, cell.row, self.options.coordinateSystem);
 
-            cell.text.setText(cell.column.toString() + ", " + cell.row.toString());
-            cell.text.position.x = Math.round(cell.center.x - (cell.text.width / 2));
-            cell.text.position.y = Math.round(cell.center.y - (height / 2) + 4);
+            if (self.options.showCoordinates) {
+                cell.text = new PIXI.Text("1", { font: "10px Arial", fill: "black", dropShadow: "true", dropShadowDistance: 1, dropShadowColor: "white" });
+                cell.text.setText(cell.column.toString() + ", " + cell.row.toString());
+                cell.text.position.x = Math.round(cell.center.x - (cell.text.width / 2));
+                cell.text.position.y = Math.round(cell.center.y - (height / 2) + 4);
+            }
 
             if (hp.TerrainTypes[cell.terrainIndex].textureIndex >= 0) {
                 createTexturedHex(cell);
@@ -147,7 +156,10 @@
             }
 
             self.cells[cell.row].push(cell);
-            self.hexes.addChild(cell.text);
+
+            if (self.options.showCoordinates) {
+                self.hexes.addChild(cell.text);
+            }
         }
 
         function loadTextures() {
@@ -187,6 +199,17 @@
             }
         };
 
+        self.generateRandomMapBetter = function () {
+            for (var row = 0; row < self.options.mapHeight; row++) {
+                self.cells[row] = [];
+                for (var column = 0; column < self.options.mapWidth; column++) {
+                    var rnd = Math.floor((Math.random() * hp.TerrainTypes.length));
+                    var cell = new hp.Cell(row, column, rnd);
+                    createCell(cell);
+                }
+            }
+        };
+
         self.generateBlankMap = function () {
             for (var row = 0; row < self.options.mapHeight; row++) {
                 self.cells[row] = [];
@@ -206,7 +229,6 @@
             self.container.addChild(self.hexes);
             self.pixiStage.addChild(self.container);
             self.hexes.clear();
-            self.hexes.lineStyle(self.options.hexLineWidth, self.options.hexLineColor, 1);
             loadTextures();
         }
 

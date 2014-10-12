@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <!--<link rel="icon" href="../../favicon.ico">-->
 
     <title>HexPixiJs</title>
 
@@ -47,41 +46,43 @@
     </div>
 
     <div class="container">
+        <div style="height: 20px;"></div>
         <div class="row">
-            <form role="form">
-                <div class="form-group">
-                    <div class="col-sm-2">
-                        <label>Map width</label>
-                        <input id="mapWidth" type="text" class="form-control" placeholder="map width" value="10" />
-                    </div>
-                    <div class="col-sm-2">
-                        <label>Map height</label>
-                        <input id="mapHeight" type="text" class="form-control" placeholder="map height" value="10" />
-                    </div>
-                    <div class="col-sm-3">
-                        <label>Coordinate system</label>
-                        <select id="coordinateSystem" class="form-control">
-                            <option value="0">odd-q</option>
-                            <option value="1" selected="selected">even-q</option>
-                            <option value="2">odd-r</option>
-                            <option value="3">even-r</option>
-                        </select>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <div style="clear: both; height: 10px;"></div>
-
-        <div class="row">
-            <div class="col-sm-12">
-                <button id="makeMapBtn" class="btn btn-primary" type="button">Make Map</button>
-                <button id="clearMapBtn" class="btn " type="button">Clear Map</button>
+            <div class="col-sm-8">
+                <div id="stage"></div>
             </div>
-        </div>
+            <div class="col-sm-4">
+                <form role="form">
+                    <div class="form-group">
 
-        <div class="col-sm-12">
-            <div id="stage"></div>
+                        <div>
+                            <label>Map width</label>
+                            <input id="mapWidth" type="text" class="form-control" placeholder="map width" value="8" />
+                        </div>
+                        <div>
+                            <label>Map height</label>
+                            <input id="mapHeight" type="text" class="form-control" placeholder="map height" value="8" />
+                        </div>
+                        <div>
+                            <label>Coordinate system</label>
+                            <select id="coordinateSystem" class="form-control">
+                                <option value="0">odd-q</option>
+                                <option value="1" selected="selected">even-q</option>
+                                <option value="2">odd-r</option>
+                                <option value="3">even-r</option>
+                            </select>
+                        </div>
+
+                        <div style="height: 20px;"></div>
+
+                        <div>
+                            <button id="makeMapBtn" class="btn btn-primary" type="button">Make Map</button>
+                            <button id="clearMapBtn" class="btn " type="button">Clear Map</button>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
