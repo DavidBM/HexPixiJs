@@ -15,7 +15,7 @@
         { name: "sand", moveMod: 0, color: 0xdBd588 },
         { name: "snow", moveMod: 0, color: 0xebebfa },
         { name: "water", moveMod: 0, color: 0x5585f8 }
-        //, { name: "grasst1", moveMod: 0, textureIndex: 0 }
+        , { name: "grasst1", moveMod: 0, textureIndex: 0 }
     ];
 
     hp.Cell = function (rowNo, columnNo, terrainIndex) {
@@ -47,7 +47,7 @@
         self.cells = [];
 
         // Used for manually drawing a hex cell. Does not work with textured cells.
-        self.drawHex = function (graphic, hexSize, cell) {
+        self.drawHex = function (graphic, hexSize, cell, hasOutline, hasFill) {
             var size = hexSize,
                 i = 0,
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
@@ -57,9 +57,17 @@
                 y = cell.center.y + size * Math.sin(angle),
                 color = hp.TerrainTypes[cell.terrainIndex].color ? hp.TerrainTypes[cell.terrainIndex].color : 0xffffff;
 
-            graphic.lineStyle(self.options.hexLineWidth, self.options.hexLineColor, 1);
-            
-            graphic.beginFill(color);
+            if (hasOutline === false) {
+                // If this is for masking then we don't need the line itself. Just the poly filled.
+                graphic.lineStyle(0, 0, 1);
+            } else {
+                graphic.lineStyle(self.options.hexLineWidth, self.options.hexLineColor, 1);
+            }
+
+            if (hasFill !== false) {
+                graphic.beginFill(color);
+            }
+
             graphic.moveTo(Math.round(x), Math.round(y));
 
             for (i = 1; i < 7; i++) {
@@ -69,10 +77,49 @@
 
                 graphic.lineTo(Math.round(x), Math.round(y));
             }
-            graphic.endFill();
+
+            if (hasFill !== false) {
+                graphic.endFill();
+            }
         }
 
-        function createTexturedHex(cell) {
+        // Use for creating a hex cell with a textured background.
+        function createTexturedHex(cell, hasOutline) {
+            var sprite = new PIXI.Sprite(self.textures[hp.TerrainTypes[cell.terrainIndex].textureIndex]),
+                cs = hp.CoordinateSystems[self.options.coordinateSystem],
+                parentContainer = new PIXI.DisplayObjectContainer(),
+                mask = new PIXI.Graphics(),
+                outline = hasOutline !== false ? new PIXI.Graphics() : null,
+                dummyCell = new hp.Cell(0, 0, cell.terrainIndex);
+
+            self.drawHex(mask, self.options.hexSize, dummyCell, false, true);
+
+            sprite.anchor.x = 0.5;
+            sprite.anchor.y = 0.5;
+            sprite.width = getHexWidth(self.options.hexSize, self.options.coordinateSystem);
+            sprite.height = getHexHeight(self.options.hexSize, self.options.coordinateSystem);
+            parentContainer.addChild(mask);
+            sprite.mask = mask;
+            parentContainer.addChild(sprite);
+
+            if (outline != null) {
+                self.drawHex(outline, self.options.hexSize, dummyCell, true, false);
+                parentContainer.addChild(outline);
+            }
+
+            parentContainer.position.x = cell.center.x;
+            parentContainer.position.y = cell.center.y;
+
+            self.hexes.addChild(parentContainer);
+
+            self.cells[cell.row].push(cell);
+            if (self.options.showCoordinates) {
+                self.hexes.addChild(cell.text);
+            }
+        }
+
+        // Used for creating hex cells from a texture, where the texture is already shaped like a hex.
+        function createTexturedHex_old(cell) {
             var sprite = new PIXI.Sprite(self.textures[hp.TerrainTypes[cell.terrainIndex].textureIndex]),
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
                 parentContainer = new PIXI.DisplayObjectContainer();
@@ -97,9 +144,31 @@
             }
         }
 
+        function getHexWidth(hexSize, coordinateSystem) {
+            var cs = hp.CoordinateSystems[coordinateSystem],
+                result = hexSize * 2;
+
+            if (cs.isFlatTop == false) {
+                result = Math.round(Math.sqrt(3) / 2 * result);
+            }
+
+            return result;
+        }
+
+        function getHexHeight(hexSize, coordinateSystem) {
+            var cs = hp.CoordinateSystems[coordinateSystem],
+                result = hexSize * 2;
+
+            if (cs.isFlatTop != false) {
+                result = Math.round(Math.sqrt(3) / 2 * result);
+            }
+
+            return result;
+        }
+
         function getCellCenter(hexSize, column, row, coordinateSystem) {
-            var width = hexSize * 2,
-                height = Math.round(Math.sqrt(3) / 2 * width),
+            var width = getHexWidth(hexSize, coordinateSystem),
+                height = getHexHeight(hexSize, coordinateSystem),
                 incX = Math.round(3 / 4 * width),
                 incY = height,
                 cs = hp.CoordinateSystems[coordinateSystem],
@@ -116,13 +185,9 @@
                     center.y = (row * incY) + incY;
                 }
             } else {
-                height = hexSize * 2;
-                width = Math.round(Math.sqrt(3) / 2 * height);
                 incX = width;
                 incY = Math.round(3 / 4 * height);
-
                 center.y = (row * incY) + (height / 2);
-
                 var offset = (cs.isOdd) ? 1 : 0;
                 if ((row + offset) % 2) {
                     // even
@@ -164,7 +229,7 @@
 
         function loadTextures() {
             self.textures = [];
-            self.textures.push(new PIXI.Texture.fromImage("images/game/hex_grass01.png"));
+            self.textures.push(new PIXI.Texture.fromImage("images/game/grass_texture231.jpg"));
         }
 
         self.reset = function (options) {
