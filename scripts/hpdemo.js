@@ -28,19 +28,24 @@
 
     function getOptions() {
         return {
-            mapWidth: $("#mapWidth").val(), 
-            mapHeight: $("#mapHeight").val(), 
+            mapWidth: $("#mapWidth").val(),
+            mapHeight: $("#mapHeight").val(),
             coordinateSystem: $("#coordinateSystem").val(),
-            hexLineWidth: $("#showLines").prop("checked") ? 3 : 0,
+            hexLineWidth: $("#showLines").prop("checked") ? 2 : 0,
             hexSize: $("#hexSize").val(),
-            showCoordinates: $("#showCoordinates").prop("checked")
+            showCoordinates: $("#showCoordinates").prop("checked"),
+            hexWidth: parseInt($("#hexWidth").val()),
+            hexHeight: parseInt($("#hexHeight").val())
         }
     }
 
     function makeMap() {
         map.reset(getOptions());
-        //map.generateBlankMap();
-        map.generateRandomMap();
+        if ($("#randomTerrain").prop("checked")) {
+            map.generateRandomMap();
+        } else {
+            map.generateBlankMap();
+        }
     }
 
     function onResize() {

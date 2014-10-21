@@ -6,3 +6,21 @@
     background-color: #ffffff;
     width:100%;
 }
+.palette-item
+{
+    width:35px;
+    height:35px;
+    float:left;
+    border: 2px solid #f0f0f0;
+}
+
+.palette-item:hover
+{
+    cursor:pointer;
+    border: 2px solid silver;
+}
+
+.palette-item-active
+{
+    border: 2px solid blue;
+}
