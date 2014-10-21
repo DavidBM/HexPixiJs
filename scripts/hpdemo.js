@@ -35,7 +35,16 @@
             hexSize: $("#hexSize").val(),
             showCoordinates: $("#showCoordinates").prop("checked"),
             hexWidth: parseInt($("#hexWidth").val()),
-            hexHeight: parseInt($("#hexHeight").val())
+            hexHeight: parseInt($("#hexHeight").val()),
+            textures: ["images/game/grassTexture.jpg", "images/game/waterTexture.jpg"],
+            terrainTypes: [
+                { name: "empty", color: 0xffffff },
+                { name: "dirt", color: 0x9B5523 },
+                { name: "sand", color: 0xdBd588 },
+                { name: "snow", color: 0xebebfa },
+                { name: "water", textureIndex: 1, color: 0x4060fa },
+                { name: "grass", textureIndex: 0, color: 0x10fa10 }
+            ]
         }
     }
 

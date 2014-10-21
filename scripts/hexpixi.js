@@ -16,16 +16,6 @@
         { name: "odd-r", isFlatTop: false, isOdd: true },
         { name: "even-r", isFlatTop: false, isOdd: false }];
 
-    hp.TerrainTypes = [
-        { name: "empty", color: 0xffffff },
-        { name: "dirt", color: 0x9B5523 },
-        { name: "sand", color: 0xdBd588 },
-        { name: "snow", color: 0xebebfa },
-        { name: "water", textureIndex: 1, color: 0x4060fa },
-        { name: "grass", textureIndex: 0, color: 0x10fa10 }
-    ];
-
-
     hp.Cell = function (rowNo, columnNo, terrainIndex) {
         var self = this;
         self.row = rowNo;
@@ -59,7 +49,8 @@
                 hexLineWidth: 2,
                 showCoordinates: false,
                 onHexClick: null,
-                textures: ["images/game/grassTexture.jpg", "images/game/waterTexture.jpg"],
+                terrainTypes: [{ name: "empty", color: 0xffffff }],
+                textures: [],
                 tiles: []
             };
 
@@ -116,7 +107,7 @@
             var graphic = new PIXI.Graphics(),
                 i = 0,
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
-                color = hp.TerrainTypes[cell.terrainIndex].color ? hp.TerrainTypes[cell.terrainIndex].color : 0xffffff;
+                color = self.options.terrainTypes[cell.terrainIndex].color ? self.options.terrainTypes[cell.terrainIndex].color : 0xffffff;
 
             if (cell.poly == null) {
                 console.log("Cell's poly must first be defined by calling createHexPoly");
@@ -168,7 +159,7 @@
         // Next creates a PIXI.Sprite and uses the PIXI.Graphics hex as a mask. Masked PIXI.Sprite is added to parent
         // PIXI.DisplayObjectContainer. Hex outline is created and added to parent container. Parent container is returned.
         function createTexturedHex(cell) {
-            var sprite = new PIXI.Sprite(self.textures[hp.TerrainTypes[cell.terrainIndex].textureIndex]),
+            var sprite = new PIXI.Sprite(self.textures[self.options.terrainTypes[cell.terrainIndex].textureIndex]),
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
                 parentContainer = new PIXI.DisplayObjectContainer(),
                 mask = null;
@@ -264,7 +255,7 @@
 
             // Create the hex or textured hex
             var hex = null;
-            if (hp.TerrainTypes[cell.terrainIndex].textureIndex >= 0) {
+            if (self.options.terrainTypes[cell.terrainIndex].textureIndex >= 0) {
                 hex = createTexturedHex(cell);
             } else {
                 hex = self.createDrawnHex(cell);
@@ -371,11 +362,12 @@
             init(options);
         };
 
+        // todo: add the cells in the correct rendering order so tiles that overlap look right.
         self.generateRandomMap = function () {
             for (var row = 0; row < self.options.mapHeight; row++) {
                 self.cells[row] = [];
                 for (var column = 0; column < self.options.mapWidth; column++) {
-                    var rnd = Math.floor((Math.random() * hp.TerrainTypes.length));
+                    var rnd = Math.floor((Math.random() * self.options.terrainTypes.length));
                     var cell = new hp.Cell(row, column, rnd);
                     self.hexes.addChild(createInteractiveCell(cell));
                     self.cells[cell.row].push(cell);
@@ -383,6 +375,7 @@
             }
         };
 
+        // todo: add the cells in the correct rendering order so tiles that overlap look right.
         self.generateBlankMap = function () {
             for (var row = 0; row < self.options.mapHeight; row++) {
                 self.cells[row] = [];
