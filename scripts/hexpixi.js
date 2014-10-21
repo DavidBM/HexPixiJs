@@ -1,8 +1,8 @@
 ﻿/// <reference path="../vend/pixi-addons.js" />
 /// <reference path="vend/pixi.dev.js" />
 /* 
-    HexPixi
-    Version 0.2 (work in progress)
+    HexPixi (alpha)
+    Version 0.25
     by Mark Harmon 2014
     A free hex game library for pixijs.
 */
@@ -24,15 +24,13 @@
         self.terrainIndex = terrainIndex ? terrainIndex : 0;
         self.poly = null; // The cell's poly that is used as a hit area.
         self.outline = null; // The PIXI.Graphics outline of the cell's hex.
-        self.sprite = null; // If a textured cell then this is the PIXI.Sprite of the hex inner.
-        self.inner = null; // If a non-textured cell then this is the PIXI.Graphics of the hex inner.
+        self.inner = null; // If a non-textured cell then this is the PIXI.Graphics of the hex inner, otherwise a PIXI.Sprite.
         self.hex = null; // The parent container of the hex's graphic objects.
 
         self.resetGraphics = function () {
             self.terrainIndex = terrainIndex ? terrainIndex : 0;
             self.poly = null; // The cell's poly that is used as a hit area.
             self.outline = null; // The PIXI.Graphics outline of the cell's hex.
-            self.sprite = null; // If a textured cell then this is the PIXI.Sprite of the hex inner.
             self.inner = null; // If a non-textured cell then this is the PIXI.Graphics of the hex inner.
             self.hex = null; // The parent container of the hex's graphic objects.
         };
@@ -51,10 +49,9 @@
                 onHexClick: null,
                 terrainTypes: [{ name: "empty", color: 0xffffff }],
                 textures: [],
-                tiles: []
+                hexBottomPad: 0
             };
 
-        self.tiles = [];
         self.textures = [];
         self.hexes = new PIXI.Graphics();
         self.container = new PIXI.DisplayObjectContainer();
@@ -66,15 +63,10 @@
         self.hexAxis = { x: 0, y: 0 };
         self.aspectRatio = 1;
 
-        self.clearCell = function (cell) {
-            self.hexes.removeChild(cell.hex);
-            cell.resetGraphics();
-        };
 
         self.setCellTerrainType = function (cell, terrainIndex) {
-            self.clearCell(cell);
             cell.terrainIndex = terrainIndex;
-            self.hexes.addChild(createInteractiveCell(cell));
+            setupRenderOrder();
         };
 
         // Creates a hex shaped polygon that is used for the hex's hit area.
@@ -141,13 +133,17 @@
         // Used for manually drawing a hex cell. Creates the filled in hex, creates the outline and then wraps 
         // them in a PIXI.DisplayObjectContainer.
         self.createDrawnHex = function (cell) {
-            var hexInner = createDrawHex_internal(cell, false, true),
+            var hexInner = null,
                 hexOuter = createDrawHex_internal(cell, true, false),
                 parentContainer = new PIXI.DisplayObjectContainer();
 
+            if (self.options.hexLineWidth > 0) {
+                hexInner = createDrawHex_internal(cell, false, true)
+                cell.inner = hexInner;
+                parentContainer.addChild(hexInner);
+            }
+
             cell.outline = hexOuter;
-            cell.inner = hexInner;
-            parentContainer.addChild(hexInner);
             parentContainer.addChild(hexOuter);
             parentContainer.position.x = cell.center.x;
             parentContainer.position.y = cell.center.y;
@@ -175,10 +171,42 @@
             sprite.mask = mask;
             parentContainer.addChild(sprite);
 
-            cell.sprite = sprite;
+            cell.inner = sprite;
 
-            cell.outline = createDrawHex_internal(cell, true, false);
-            parentContainer.addChild(cell.outline);
+            if (self.options.hexLineWidth > 0) {
+                cell.outline = createDrawHex_internal(cell, true, false);
+                parentContainer.addChild(cell.outline);
+            }
+
+            parentContainer.position.x = cell.center.x;
+            parentContainer.position.y = cell.center.y;
+
+            return parentContainer;
+        }
+
+        // Use for creating a hex cell with a textured background that stands on it's own. Parent container is returned.
+        function createTileHex(cell) {
+            var sprite = new PIXI.Sprite(self.textures[self.options.terrainTypes[cell.terrainIndex].tileIndex]),
+                cs = hp.CoordinateSystems[self.options.coordinateSystem],
+                parentContainer = new PIXI.DisplayObjectContainer(),
+                mask = null,
+                topPercent = 0.5;
+
+            sprite.width = self.options.hexWidth;
+            sprite.height = self.options.hexHeight + self.options.hexBottomPad;
+
+            topPercent = self.options.hexHeight / sprite.height;
+            sprite.anchor.x = 0.5;
+            sprite.anchor.y = topPercent / 2;
+
+            parentContainer.addChild(sprite);
+
+            cell.inner = sprite;
+
+            if (self.options.hexLineWidth > 0) {
+                cell.outline = createDrawHex_internal(cell, true, false);
+                parentContainer.addChild(cell.outline);
+            }
 
             parentContainer.position.x = cell.center.x;
             parentContainer.position.y = cell.center.y;
@@ -212,10 +240,10 @@
             var incX = 0.75 * self.options.hexWidth,
                 incY = self.options.hexHeight,
                 cs = hp.CoordinateSystems[coordinateSystem],
-                center = { x: 0, y: 0 };
+                center = { x: 0, y: 0 },
+                offset = (cs.isOdd) ? 0 : 1;
 
             if (cs.isFlatTop) {
-                var offset = (cs.isOdd) ? 0 : 1;
                 center.x = (column * incX) + (self.options.hexWidth / 2);
                 if ((column + offset) % 2) {
                     // even
@@ -228,7 +256,7 @@
                 incX = self.options.hexWidth;
                 incY = (0.75 * self.options.hexHeight);
                 center.y = (row * incY) + (self.options.hexHeight / 2);
-                var offset = (cs.isOdd) ? 1 : 0;
+                offset = (cs.isOdd) ? 1 : 0;
                 if ((row + offset) % 2) {
                     // even
                     center.x = (column * incX) + (self.options.hexWidth / 2);
@@ -237,6 +265,8 @@
                     center.x = (column * incX) + self.options.hexWidth;
                 }
             }
+
+            //center.y -= self.options.hexBottomPad;
 
             return center;
         }
@@ -257,6 +287,8 @@
             var hex = null;
             if (self.options.terrainTypes[cell.terrainIndex].textureIndex >= 0) {
                 hex = createTexturedHex(cell);
+            } else if (self.options.terrainTypes[cell.terrainIndex].tileIndex >= 0) {
+                hex = createTileHex(cell);
             } else {
                 hex = self.createDrawnHex(cell);
             }
@@ -323,18 +355,18 @@
             return hex;
         }
 
-        function loadTiles() {
-            self.tiles = [];
-            $.each(self.options.textures, function (index, item) {
-                self.tiles.push(new PIXI.Texture.fromImage(item));
-            });
-        }
-
         function loadTextures() {
             self.textures = [];
             $.each(self.options.textures, function (index, item) {
                 self.textures.push(new PIXI.Texture.fromImage(item));
             });
+        }
+
+        // A private helper function that clears out all objects from self.hexes.children.
+        function clearHexes() {
+            while (self.hexes.children.length) {
+                self.hexes.removeChild(self.hexes.children[0]);
+            }
         }
 
         self.reset = function (options) {
@@ -345,9 +377,7 @@
                 self.cells.splice(0, 1);
             }
 
-            while (self.hexes.children.length) {
-                self.hexes.removeChild(self.hexes.children[0]);
-            }
+            clearHexes();
 
             while (self.container.children.length > 0) {
                 self.container.removeChildAt(0);
@@ -362,29 +392,55 @@
             init(options);
         };
 
-        // todo: add the cells in the correct rendering order so tiles that overlap look right.
+        function setupRenderOrder() {
+            var cell = null,
+                row = null,
+                rowIndex = 0,
+                colIndex = 0;
+
+            clearHexes();
+            while (rowIndex < self.cells.length) {
+                row = self.cells[rowIndex];
+                colIndex = 0;
+                while (colIndex < row.length) {
+                    cell = row[colIndex];
+                    self.hexes.addChild(createInteractiveCell(cell));
+                    colIndex++;
+                }
+                rowIndex++;
+            }
+        }
+
         self.generateRandomMap = function () {
             for (var row = 0; row < self.options.mapHeight; row++) {
-                self.cells[row] = [];
-                for (var column = 0; column < self.options.mapWidth; column++) {
+                self.cells.push([]);
+                for (var column = 0; column < self.options.mapWidth; column += 2) {
                     var rnd = Math.floor((Math.random() * self.options.terrainTypes.length));
                     var cell = new hp.Cell(row, column, rnd);
-                    self.hexes.addChild(createInteractiveCell(cell));
+                    self.cells[cell.row].push(cell);
+                }
+                for (var column = 1; column < self.options.mapWidth; column+=2) {
+                    var rnd = Math.floor((Math.random() * self.options.terrainTypes.length));
+                    var cell = new hp.Cell(row, column, rnd);
                     self.cells[cell.row].push(cell);
                 }
             }
+            setupRenderOrder();
         };
 
-        // todo: add the cells in the correct rendering order so tiles that overlap look right.
         self.generateBlankMap = function () {
             for (var row = 0; row < self.options.mapHeight; row++) {
-                self.cells[row] = [];
-                for (var column = 0; column < self.options.mapWidth; column++) {
+                self.cells.push([]);
+                for (var column = 0; column < self.options.mapWidth; column+=2) {
                     var cell = new hp.Cell(row, column, 0);
-                    self.hexes.addChild(createInteractiveCell(cell));
+                    self.cells[cell.row].push(cell);
+                }
+                for (var column = 1; column < self.options.mapWidth; column+=2) {
+                    var cell = new hp.Cell(row, column, 0);
                     self.cells[cell.row].push(cell);
                 }
             }
+            setupRenderOrder();
         };
 
         function init(options) {
