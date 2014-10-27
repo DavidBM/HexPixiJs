@@ -2,11 +2,11 @@
 /// <reference path="vend/pixi.dev.js" />
 /* 
     HexPixi (alpha)
-    Version 0.25
+    Version 0.26
     by Mark Harmon 2014
     A free hex game library for pixijs.
 */
-(function (window, $) {
+(function (window) {
     'use strict';
     var hp = window.HexPixi = window.HexPixi || {};
 
@@ -39,17 +39,35 @@
     hp.Map = function (pixiStage, options) {
         var self = this,
             defaultOptions = {
+                // The HexPixi.CoordinateSystems index to use for the map.
                 coordinateSystem: 1,
+                // The map's number of cells across (cell column count).
                 mapWidth: 10,
+                // The map's number of cells high (cell row count).
                 mapHeight: 10,
+                // The radius of the hex. Ignored if hexWidth and hexHeight are set to non-null.
                 hexSize: 40,
+                // The pixel width of a hex.
+                hexWidth: null,
+                // The pixel height of a hex.
+                hexHeight: null,
+                // The color to use when drawing hex outlines.
                 hexLineColor: 0x909090,
+                // The width in pixels of the hex outline.
                 hexLineWidth: 2,
+                // If true then the hex's coordinates will be visible on the hex.
                 showCoordinates: false,
+                // Callback function (cell) that handles a hex being clicked on or tapped.
                 onHexClick: null,
+                // Specify the types of terrain available on the map. Map cells reference these terrain
+                // types by index. Add custom properties to extend functionality.
                 terrainTypes: [{ name: "empty", color: 0xffffff }],
+                // Array of strings that specify the url of a texture. Can be referenced by index in terrainType.
                 textures: [],
-                hexBottomPad: 0
+                // This is the pixel height specifying an area of overlap for hex cells. Necessary when
+                // working with isometric view art systems.
+                hexBottomPad: 0,
+                onAssetsLoaded: function(){}
             };
 
         self.textures = [];
@@ -66,7 +84,7 @@
 
         self.setCellTerrainType = function (cell, terrainIndex) {
             cell.terrainIndex = terrainIndex;
-            setupRenderOrder();
+            createSceneGraph();
         };
 
         // Creates a hex shaped polygon that is used for the hex's hit area.
@@ -184,7 +202,8 @@
             return parentContainer;
         }
 
-        // Use for creating a hex cell with a textured background that stands on it's own. Parent container is returned.
+        // Use for creating a hex cell with a textured background that stands on it's own. The hex outline will
+        // bee added if options.hexLineWidth is greater than 0. Parent container is returned.
         function createTileHex(cell) {
             var sprite = new PIXI.Sprite(self.textures[self.options.terrainTypes[cell.terrainIndex].tileIndex]),
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
@@ -214,6 +233,7 @@
             return parentContainer;
         }
 
+        // Calculates and returns the width of a hex cell.
         function getHexWidth() {
             var result = null,
                 cs = hp.CoordinateSystems[self.options.coordinateSystem];
@@ -225,6 +245,7 @@
             return result;
         }
 
+        // Calculates and returns the height of a hex cell.
         function getHexHeight() {
             var result = null,
                 cs = hp.CoordinateSystems[self.options.coordinateSystem];
@@ -236,6 +257,7 @@
             return result;
         }
 
+        // Calculate the center of a cell based on column, row and coordinate system.
         function getCellCenter(column, row, coordinateSystem) {
             var incX = 0.75 * self.options.hexWidth,
                 incY = self.options.hexHeight,
@@ -271,6 +293,7 @@
             return center;
         }
 
+        // Takes a cell and creates all the graphics to display it.
         function createCell(cell) {
             cell.center = getCellCenter(cell.column, cell.row, self.options.coordinateSystem);
             // Generate poly first then use poly to draw hex and create masks and all that.
@@ -305,6 +328,7 @@
             return hex;
         }
 
+        // A wrapper for createCell that adds interactivity to the individual cells.
         function createInteractiveCell(cell) {
             var hex = createCell(cell);
             hex.hitArea = cell.poly;
@@ -355,20 +379,32 @@
             return hex;
         }
 
+        // Loads all the textures specified in options.
         function loadTextures() {
             self.textures = [];
-            $.each(self.options.textures, function (index, item) {
-                self.textures.push(new PIXI.Texture.fromImage(item));
-            });
+
+            // create a new loader
+            var loader = new PIXI.AssetLoader(self.options.textures, true);
+
+            // use callback
+            loader.onComplete = self.options.onAssetsLoaded;
+
+            //begin load
+            loader.load();
+
+            for (var i=0; i < self.options.textures.length; i++) {
+                self.textures.push(new PIXI.Texture.fromImage(self.options.textures[i]));
+            }
         }
 
-        // A private helper function that clears out all objects from self.hexes.children.
+        // Clears out all objects from self.hexes.children.
         function clearHexes() {
             while (self.hexes.children.length) {
                 self.hexes.removeChild(self.hexes.children[0]);
             }
         }
 
+        // Resets the entire map without destroying the HexPixi.Map instance.
         self.reset = function (options) {
             while (self.cells.length > 0) {
                 while (self.cells[0].length > 0) {
@@ -392,7 +428,8 @@
             init(options);
         };
 
-        function setupRenderOrder() {
+        // Clears the scene graph and recreates it from self.cells.
+        function createSceneGraph() {
             var cell = null,
                 row = null,
                 rowIndex = 0,
@@ -425,7 +462,7 @@
                     self.cells[cell.row].push(cell);
                 }
             }
-            setupRenderOrder();
+            createSceneGraph();
         };
 
         self.generateBlankMap = function () {
@@ -440,11 +477,31 @@
                     self.cells[cell.row].push(cell);
                 }
             }
-            setupRenderOrder();
+            createSceneGraph();
         };
 
+        function extend(obj) {
+            Array.prototype.slice.call(arguments, 1).forEach(function (source) {
+                if (source) {
+                    for (var prop in source) {
+                        if (source[prop].constructor === Object) {
+                            if (!obj[prop] || obj[prop].constructor === Object) {
+                                obj[prop] = obj[prop] || {};
+                                extend(obj[prop], source[prop]);
+                            } else {
+                                obj[prop] = source[prop];
+                            }
+                        } else {
+                            obj[prop] = source[prop];
+                        }
+                    }
+                }
+            });
+            return obj;
+        }
+
         function init(options) {
-            self.options = $.extend(true, {}, defaultOptions, options);
+            self.options = extend(defaultOptions, options);
 
             // If we are overiding the top-down view method then need to force some settings
             if (self.options.hexWidth && self.options.hexHeight) {
@@ -486,7 +543,7 @@
 
         init(options);
     };
-}(window, jQuery));
+}(window));
 
 PIXI.Graphics.prototype.updateLineStyle = function (lineWidth, color, alpha) {
     var len = this.graphicsData.length;
