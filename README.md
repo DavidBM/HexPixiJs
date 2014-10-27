@@ -36,5 +36,9 @@ Simple demo 2 shows interactive map usage.
 [Simple Demo 2](http://yungsippin.com/hexpixi/simpleDemo2.html)
 
 
+Credits
+-------
+[PixiJS](http://www.pixijs.com/)
+Art assets for simple demo 2 by [Kenney](http://opengameart.org/users/kenney)
 
 Feel free to submit contributions.
