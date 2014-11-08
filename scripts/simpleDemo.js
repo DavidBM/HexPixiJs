@@ -5,7 +5,11 @@
     var hp = window.HexPixi = window.HexPixi || {},
         map = null,
         stage = new PIXI.Stage(0xe0e0e0),
-        renderer = new PIXI.autoDetectRenderer(800, 600, null, false, false);
+        renderer = new PIXI.autoDetectRenderer(800, 600, {
+            antialiasing: false,
+            transparent: false,
+            resolution: 1
+        });
 
     function animate() {
         requestAnimFrame(animate);

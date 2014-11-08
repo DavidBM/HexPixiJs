@@ -5,7 +5,11 @@
     var hp = window.HexPixi = window.HexPixi || {},
         map = null,
         stage = new PIXI.Stage(0xe0e0e0),
-        renderer = new PIXI.autoDetectRenderer(800, 600, null, false, false);
+        renderer = new PIXI.autoDetectRenderer(800, 600, {
+            antialiasing: false,
+            transparent: false,
+            resolution: 1
+        });
 
     function onHexClick(cell) {
         map.setCellTerrainType(cell, 0);
@@ -37,6 +41,7 @@
                 "images/game/tileWater.png"
             ],
             terrainTypes: [
+                { name: "empty", color: 0xffffff, isEmpty: true },
                 { name: "grass", tileIndex: 0, color: 0x10fa10 },
                 { name: "sand", tileIndex: 1, color: 0xdBd588 },
                 { name: "dirt", tileIndex: 2, color: 0x9B5523 },
@@ -60,6 +65,6 @@
         setupPixiJs();
         map.generateRandomMap();
     }
-    
+
     initPage();
 }(window));

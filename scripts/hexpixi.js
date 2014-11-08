@@ -2,20 +2,46 @@
 /// <reference path="vend/pixi.dev.js" />
 /* 
     HexPixi (alpha)
-    Version 0.26
+    Version 0.30
     by Mark Harmon 2014
     A free hex game library for pixijs.
+    Released under MIT License. 
+    Please let me know about any games released using this library or derivative work.
 */
 (function (window) {
     'use strict';
     var hp = window.HexPixi = window.HexPixi || {};
 
+    // There are four basic coordinate systems based on http://www.redblobgames.com/grids/hexagons/
     hp.CoordinateSystems = [
         { name: "odd-q", isFlatTop: true, isOdd: true },
         { name: "even-q", isFlatTop: true, isOdd: false },
         { name: "odd-r", isFlatTop: false, isOdd: true },
         { name: "even-r", isFlatTop: false, isOdd: false }];
 
+
+    hp.Camera = function (amap) {
+        var self = this,
+            position = { x: 0, y: 0 },
+            map = amap;
+
+        function updateSceneGraph() {
+        }
+
+        self.position = function (x, y) {
+            var result = position;
+
+            if (x >= 0 && y >= 0) {
+                position.x = x;
+                position.y = y;
+                updateSceneGraph();
+            }
+
+            return position;
+        };
+    };
+
+    // The HexPixi.Cell object represents one map hex cell.
     hp.Cell = function (rowNo, columnNo, terrainIndex) {
         var self = this;
         self.row = rowNo;
@@ -25,17 +51,19 @@
         self.poly = null; // The cell's poly that is used as a hit area.
         self.outline = null; // The PIXI.Graphics outline of the cell's hex.
         self.inner = null; // If a non-textured cell then this is the PIXI.Graphics of the hex inner, otherwise a PIXI.Sprite.
-        self.hex = null; // The parent container of the hex's graphic objects.
+        self.hex = null; // The parent container of the hex's graphics objects.
+        self.isEmpty = null; // The cell is empty if set to true.
 
         self.resetGraphics = function () {
             self.terrainIndex = terrainIndex ? terrainIndex : 0;
             self.poly = null; // The cell's poly that is used as a hit area.
             self.outline = null; // The PIXI.Graphics outline of the cell's hex.
             self.inner = null; // If a non-textured cell then this is the PIXI.Graphics of the hex inner.
-            self.hex = null; // The parent container of the hex's graphic objects.
+            self.hex = null; // The parent container of the hex's graphics objects.
         };
     };
 
+    // Scene graph heirarchy = pixiState -> container -> hexes
     hp.Map = function (pixiStage, options) {
         var self = this,
             defaultOptions = {
@@ -61,7 +89,7 @@
                 onHexClick: null,
                 // Specify the types of terrain available on the map. Map cells reference these terrain
                 // types by index. Add custom properties to extend functionality.
-                terrainTypes: [{ name: "empty", color: 0xffffff }],
+                terrainTypes: [{ name: "empty", color: 0xffffff, isEmpty: true }],
                 // Array of strings that specify the url of a texture. Can be referenced by index in terrainType.
                 textures: [],
                 // This is the pixel height specifying an area of overlap for hex cells. Necessary when
@@ -108,13 +136,15 @@
                 points.push(new PIXI.Point(x, y));
             }
 
+            console.log(points);
+
             return new PIXI.Polygon(points);
         }
 
         // Creates a drawn hex while ignoring the cell's position. A new PIXI.Graphics object is created
         // and used to draw and (possibly) fill in the hex. The PIXI.Graphics is returned to the caller.
         function createDrawHex_internal(cell, hasOutline, hasFill) {
-            var graphic = new PIXI.Graphics(),
+            var graphics = new PIXI.Graphics(),
                 i = 0,
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
                 color = self.options.terrainTypes[cell.terrainIndex].color ? self.options.terrainTypes[cell.terrainIndex].color : 0xffffff;
@@ -126,43 +156,41 @@
 
             if (hasOutline === false) {
                 // If this is for masking then we don't need the line itself. Just the poly filled.
-                graphic.lineStyle(0, 0, 1);
+                graphics.lineStyle(0, 0, 1);
             } else {
-                graphic.lineStyle(self.options.hexLineWidth, self.options.hexLineColor, 1);
+                graphics.lineStyle(self.options.hexLineWidth, self.options.hexLineColor, 1);
             }
 
             if (hasFill !== false) {
-                graphic.beginFill(color);
+                graphics.beginFill(color, 1);
             }
 
-            graphic.moveTo(cell.poly.points[0].x, cell.poly.points[0].y);
+            graphics.moveTo(cell.poly.points[i], cell.poly.points[i+1]);
 
-            for (i = 1; i < 7; i++) {
-                graphic.lineTo(cell.poly.points[i].x, cell.poly.points[i].y);
+            for (i = 2; i < cell.poly.points.length; i += 2) {
+                graphics.lineTo(cell.poly.points[i], cell.poly.points[i+1]);
             }
 
             if (hasFill !== false) {
-                graphic.endFill();
+                graphics.endFill();
             }
 
-            return graphic;
+            return graphics;
         }
 
-        // Used for manually drawing a hex cell. Creates the filled in hex, creates the outline and then wraps 
-        // them in a PIXI.DisplayObjectContainer.
+        // Used for manually drawing a hex cell. Creates the filled in hex, creates the outline (if there is one)
+        // and then wraps them in a PIXI.DisplayObjectContainer.
         self.createDrawnHex = function (cell) {
-            var hexInner = null,
-                hexOuter = createDrawHex_internal(cell, true, false),
-                parentContainer = new PIXI.DisplayObjectContainer();
+            var parentContainer = new PIXI.DisplayObjectContainer();
+
+            cell.inner = createDrawHex_internal(cell, false, true);
+            parentContainer.addChild(cell.inner);
 
             if (self.options.hexLineWidth > 0) {
-                hexInner = createDrawHex_internal(cell, false, true)
-                cell.inner = hexInner;
-                parentContainer.addChild(hexInner);
+                cell.outline = createDrawHex_internal(cell, true, false);
+                parentContainer.addChild(cell.outline);
             }
 
-            cell.outline = hexOuter;
-            parentContainer.addChild(hexOuter);
             parentContainer.position.x = cell.center.x;
             parentContainer.position.y = cell.center.y;
 
@@ -171,7 +199,8 @@
 
         // Use for creating a hex cell with a textured background. First creates a PIXI.Graphics of the hex shape.
         // Next creates a PIXI.Sprite and uses the PIXI.Graphics hex as a mask. Masked PIXI.Sprite is added to parent
-        // PIXI.DisplayObjectContainer. Hex outline is created and added to parent container. Parent container is returned.
+        // PIXI.DisplayObjectContainer. Hex outline (if there is one) is created and added to parent container. 
+        // Parent container is returned.
         function createTexturedHex(cell) {
             var sprite = new PIXI.Sprite(self.textures[self.options.terrainTypes[cell.terrainIndex].textureIndex]),
                 cs = hp.CoordinateSystems[self.options.coordinateSystem],
@@ -221,6 +250,22 @@
             parentContainer.addChild(sprite);
 
             cell.inner = sprite;
+
+            if (self.options.hexLineWidth > 0) {
+                cell.outline = createDrawHex_internal(cell, true, false);
+                parentContainer.addChild(cell.outline);
+            }
+
+            parentContainer.position.x = cell.center.x;
+            parentContainer.position.y = cell.center.y;
+
+            return parentContainer;
+        }
+
+        function createEmptyHex(cell) {
+            var parentContainer = new PIXI.DisplayObjectContainer();
+
+            cell.inner = null;
 
             if (self.options.hexLineWidth > 0) {
                 cell.outline = createDrawHex_internal(cell, true, false);
@@ -296,6 +341,7 @@
         // Takes a cell and creates all the graphics to display it.
         function createCell(cell) {
             cell.center = getCellCenter(cell.column, cell.row, self.options.coordinateSystem);
+
             // Generate poly first then use poly to draw hex and create masks and all that.
             cell.poly = createHexPoly();
 
@@ -303,12 +349,14 @@
                 cell.text = new PIXI.Text("1", { font: "10px Arial", fill: "black", dropShadow: "true", dropShadowDistance: 1, dropShadowColor: "white" });
                 cell.text.setText(cell.column.toString() + ", " + cell.row.toString());
                 cell.text.position.x = -Math.round((cell.text.width / 2));
-                cell.text.position.y = 4 - Math.round(self.options.hexHeight / 2);
+                cell.text.position.y = 8 - Math.round(self.options.hexHeight / 2);
             }
 
             // Create the hex or textured hex
             var hex = null;
-            if (self.options.terrainTypes[cell.terrainIndex].textureIndex >= 0) {
+            if (self.options.terrainTypes[cell.terrainIndex].isEmpty === true) {
+                hex = createEmptyHex(cell);
+            } else if (self.options.terrainTypes[cell.terrainIndex].textureIndex >= 0) {
                 hex = createTexturedHex(cell);
             } else if (self.options.terrainTypes[cell.terrainIndex].tileIndex >= 0) {
                 hex = createTileHex(cell);
@@ -332,7 +380,7 @@
         function createInteractiveCell(cell) {
             var hex = createCell(cell);
             hex.hitArea = cell.poly;
-            hex.setInteractive(true);
+            hex.interactive = true;
 
             // set the mouseover callback..
             hex.mouseover = function (data) {
@@ -383,17 +431,22 @@
         function loadTextures() {
             self.textures = [];
 
-            // create a new loader
-            var loader = new PIXI.AssetLoader(self.options.textures, true);
+            if (self.options.textures.length) {
+                // create a new loader
+                var loader = new PIXI.AssetLoader(self.options.textures, true);
 
-            // use callback
-            loader.onComplete = self.options.onAssetsLoaded;
+                // use callback
+                loader.onComplete = self.options.onAssetsLoaded;
 
-            //begin load
-            loader.load();
+                //begin load
+                loader.load();
 
-            for (var i=0; i < self.options.textures.length; i++) {
-                self.textures.push(new PIXI.Texture.fromImage(self.options.textures[i]));
+                for (var i = 0; i < self.options.textures.length; i++) {
+                    self.textures.push(new PIXI.Texture.fromImage(self.options.textures[i]));
+                }
+            } else {
+                // No assets to load so just call onAssetsLoaded function to notify game that we are done.
+                self.options.onAssetsLoaded && self.options.onAssetsLoaded();
             }
         }
 
