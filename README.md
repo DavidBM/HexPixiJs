@@ -35,6 +35,9 @@ Simple demo shows barebones usage.
 Simple demo 2 shows interactive map usage.
 [Simple Demo 2](http://yungsippin.com/hexpixi/simpleDemo2.html)
 
+License
+-------
+Released under the [MIT license](http://www.opensource.org/licenses/MIT).
 
 Credits
 -------
