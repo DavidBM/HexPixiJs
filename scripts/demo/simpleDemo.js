@@ -2,10 +2,10 @@
 /// <reference path="hexpixi.js" />
 (function (window) {
     'use strict';
-    var hp = require('../hexpixi.js');
+    var hp = window.HexPixi;
     var map = null,
-        stage = new PIXI.Stage(0xe0e0e0),
-        renderer = new PIXI.autoDetectRenderer(800, 600, {
+        stage = new hp.PIXI.Stage(0xe0e0e0),
+        renderer = new hp.PIXI.autoDetectRenderer(800, 600, {
             antialiasing: false,
             transparent: false,
             resolution: 1
@@ -51,6 +51,12 @@
 
         map.generateRandomMap();
     }
+
+    window.requestAnimFrame = (function(callback) {
+        return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(callback) {
+            window.setTimeout(callback, 1000 / 60);
+        };
+    })();
 
     initPage();
 
