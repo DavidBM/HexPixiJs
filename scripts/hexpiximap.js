@@ -3,71 +3,75 @@ var Cell = require('./hexpixicell.js');
 var pixiHelpers = require('./pixihelpers.js');
 var PIXI = require('pixi.js');
 
+module.exports = exports = Map;
+
+
 // There are four basic coordinate systems based on http://www.redblobgames.com/grids/hexagons/
-hp.CoordinateSystems = [
+var CoordinateSystems = [
     { name: "odd-q", isFlatTop: true, isOdd: true },
     { name: "even-q", isFlatTop: true, isOdd: false },
     { name: "odd-r", isFlatTop: false, isOdd: true },
     { name: "even-r", isFlatTop: false, isOdd: false }];
 
-// Scene graph heirarchy = pixiState -> container -> hexes
-hp.Map = function (pixiStage, options) {
-    var defaultOptions = {
-        // The HexPixi.CoordinateSystems index to use for the map.
-        coordinateSystem: 1,
-        // The map's number of cells across (cell column count).
-        mapWidth: 10,
-        // The map's number of cells high (cell row count).
-        mapHeight: 10,
-        // The radius of the hex. Ignored if hexWidth and hexHeight are set to non-null.
-        hexSize: 40,
-        // The pixel width of a hex.
-        hexWidth: null,
-        // The pixel height of a hex.
-        hexHeight: null,
-        // The color to use when drawing hex outlines.
-        hexLineColor: 0x909090,
-        // The width in pixels of the hex outline.
-        hexLineWidth: 2,
-        // If true then the hex's coordinates will be visible on the hex.
-        showCoordinates: false,
-        // Callback function (cell) that handles a hex being clicked on or tapped.
-        onHexClick: null,
-        // Specify the types of terrain available on the map. Map cells reference these terrain
-        // types by index. Add custom properties to extend functionality.
-        terrainTypes: [{ name: "empty", color: 0xffffff, isEmpty: true }],
-        // Array of strings that specify the url of a texture. Can be referenced by index in terrainType.
-        textures: [],
-        // This is the pixel height specifying an area of overlap for hex cells. Necessary when
-        // working with isometric view art systems.
-        hexBottomPad: 0,
-        onAssetsLoaded: function(){}
-    };
-
-    self.textures = [];
-    self.hexes = new PIXI.Graphics();
-    self.container = new PIXI.DisplayObjectContainer();
-    self.pixiStage = null;
-    self.options = null;
-    self.cells = [];
-    self.cellHighlighter = null;
-    self.inCellCount = 0;
-    self.hexAxis = { x: 0, y: 0 };
-    self.aspectRatio = 1;
-
-
-    this.init(options);
+var defaultOptions = {
+    // The HexPixi.CoordinateSystems index to use for the map.
+    coordinateSystem: 1,
+    // The map's number of cells across (cell column count).
+    mapWidth: 10,
+    // The map's number of cells high (cell row count).
+    mapHeight: 10,
+    // The radius of the hex. Ignored if hexWidth and hexHeight are set to non-null.
+    hexSize: 40,
+    // The pixel width of a hex.
+    hexWidth: null,
+    // The pixel height of a hex.
+    hexHeight: null,
+    // The color to use when drawing hex outlines.
+    hexLineColor: 0x909090,
+    // The width in pixels of the hex outline.
+    hexLineWidth: 2,
+    // If true then the hex's coordinates will be visible on the hex.
+    showCoordinates: false,
+    // Callback function (cell) that handles a hex being clicked on or tapped.
+    onHexClick: null,
+    // Specify the types of terrain available on the map. Map cells reference these terrain
+    // types by index. Add custom properties to extend functionality.
+    terrainTypes: [{ name: "empty", color: 0xffffff, isEmpty: true }],
+    // Array of strings that specify the url of a texture. Can be referenced by index in terrainType.
+    textures: [],
+    // This is the pixel height specifying an area of overlap for hex cells. Necessary when
+    // working with isometric view art systems.
+    hexBottomPad: 0,
+    onAssetsLoaded: function(){}
 };
 
-hp.Map.prototype.setCellTerrainType = function (cell, terrainIndex) {
+// Scene graph heirarchy = pixiState -> container -> hexes
+function Map (pixiStage, options) {
+
+    this.textures = [];
+    this.hexes = new PIXI.Graphics();
+    this.container = new PIXI.DisplayObjectContainer();
+    this.pixiStage = null;
+    this.options = null;
+    this.cells = [];
+    this.cellHighlighter = null;
+    this.inCellCount = 0;
+    this.hexAxis = { x: 0, y: 0 };
+    this.aspectRatio = 1;
+
+
+    this.init(pixiStage, options);
+}
+
+Map.prototype.setCellTerrainType = function (cell, terrainIndex) {
     cell.terrainIndex = terrainIndex;
     this.createSceneGraph();
 };
 
 // Creates a hex shaped polygon that is used for the hex's hit area.
-hp.Map.prototype.createHexPoly = function () {
+Map.prototype.createHexPoly = function () {
     var i = 0,
-        cs = hp.CoordinateSystems[this.options.coordinateSystem],
+        cs = CoordinateSystems[this.options.coordinateSystem],
         offset = cs.isFlatTop ? 0 : 0.5,
         angle = 2 * Math.PI / 6 * offset,
         center = { x: this.hexAxis.x / 2, y: this.hexAxis.y / 2 },
@@ -92,10 +96,10 @@ hp.Map.prototype.createHexPoly = function () {
 
 // Creates a drawn hex while ignoring the cell's position. A new PIXI.Graphics object is created
 // and used to draw and (possibly) fill in the hex. The PIXI.Graphics is returned to the caller.
-hp.Map.prototype.createDrawHex_internal = function (cell, hasOutline, hasFill) {
+Map.prototype.createDrawHex_internal = function (cell, hasOutline, hasFill) {
     var graphics = new PIXI.Graphics(),
         i = 0,
-        cs = hp.CoordinateSystems[this.options.coordinateSystem],
+        cs = CoordinateSystems[this.options.coordinateSystem],
         color = this.options.terrainTypes[cell.terrainIndex].color ? this.options.terrainTypes[cell.terrainIndex].color : 0xffffff;
 
     if (cell.poly === null) {
@@ -129,7 +133,7 @@ hp.Map.prototype.createDrawHex_internal = function (cell, hasOutline, hasFill) {
 
 // Used for manually drawing a hex cell. Creates the filled in hex, creates the outline (if there is one)
 // and then wraps them in a PIXI.DisplayObjectContainer.
-hp.Map.prototype.createDrawnHex = function (cell) {
+Map.prototype.createDrawnHex = function (cell) {
     var parentContainer = new PIXI.DisplayObjectContainer();
 
     cell.inner = this.createDrawHex_internal(cell, false, true);
@@ -150,9 +154,9 @@ hp.Map.prototype.createDrawnHex = function (cell) {
 // Next creates a PIXI.Sprite and uses the PIXI.Graphics hex as a mask. Masked PIXI.Sprite is added to parent
 // PIXI.DisplayObjectContainer. Hex outline (if there is one) is created and added to parent container.
 // Parent container is returned.
-hp.Map.prototype.createTexturedHex = function (cell) {
+Map.prototype.createTexturedHex = function (cell) {
     var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].textureIndex]),
-        cs = hp.CoordinateSystems[this.options.coordinateSystem],
+        cs = CoordinateSystems[this.options.coordinateSystem],
         parentContainer = new PIXI.DisplayObjectContainer(),
         mask = null;
 
@@ -182,9 +186,9 @@ hp.Map.prototype.createTexturedHex = function (cell) {
 
 // Use for creating a hex cell with a textured background that stands on it's own. The hex outline will
 // bee added if options.hexLineWidth is greater than 0. Parent container is returned.
-hp.Map.prototype.createTileHex = function (cell) {
+Map.prototype.createTileHex = function (cell) {
     var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].tileIndex]),
-        cs = hp.CoordinateSystems[this.options.coordinateSystem],
+        cs = CoordinateSystems[this.options.coordinateSystem],
         parentContainer = new PIXI.DisplayObjectContainer(),
         mask = null,
         topPercent = 0.5;
@@ -211,7 +215,7 @@ hp.Map.prototype.createTileHex = function (cell) {
     return parentContainer;
 };
 
-hp.Map.prototype.createEmptyHex = function (cell) {
+Map.prototype.createEmptyHex = function (cell) {
     var parentContainer = new PIXI.DisplayObjectContainer();
 
     cell.inner = null;
@@ -228,9 +232,9 @@ hp.Map.prototype.createEmptyHex = function (cell) {
 };
 
 // Calculates and returns the width of a hex cell.
-hp.Map.prototype.getHexWidth = function () {
+Map.prototype.getHexWidth = function () {
     var result = null,
-        cs = hp.CoordinateSystems[this.options.coordinateSystem];
+        cs = CoordinateSystems[this.options.coordinateSystem];
     result = this.options.hexSize * 2;
     if (cs.isFlatTop === false) {
         result = Math.sqrt(3) / 2 * result;
@@ -240,9 +244,9 @@ hp.Map.prototype.getHexWidth = function () {
 };
 
 // Calculates and returns the height of a hex cell.
-hp.Map.prototype.getHexHeight = function () {
+Map.prototype.getHexHeight = function () {
     var result = null,
-        cs = hp.CoordinateSystems[this.options.coordinateSystem];
+        cs = CoordinateSystems[this.options.coordinateSystem];
     result = this.options.hexSize * 2;
     if (cs.isFlatTop === true) {
         result = Math.sqrt(3) / 2 * result;
@@ -252,10 +256,10 @@ hp.Map.prototype.getHexHeight = function () {
 };
 
 // Calculate the center of a cell based on column, row and coordinate system.
-hp.Map.prototype.getCellCenter = function (column, row, coordinateSystem) {
+Map.prototype.getCellCenter = function (column, row, coordinateSystem) {
     var incX = 0.75 * this.options.hexWidth,
         incY = this.options.hexHeight,
-        cs = hp.CoordinateSystems[coordinateSystem],
+        cs = CoordinateSystems[coordinateSystem],
         center = { x: 0, y: 0 },
         offset = (cs.isOdd) ? 0 : 1;
 
@@ -288,8 +292,8 @@ hp.Map.prototype.getCellCenter = function (column, row, coordinateSystem) {
 };
 
 // Takes a cell and creates all the graphics to display it.
-hp.Map.prototype.createCell = function(cell) {
-    cell.center = this.getCellCenter(cell.column, cell.row, self.options.coordinateSystem);
+Map.prototype.createCell = function(cell) {
+    cell.center = this.getCellCenter(cell.column, cell.row, this.options.coordinateSystem);
 
     // Generate poly first then use poly to draw hex and create masks and all that.
     cell.poly = this.createHexPoly();
@@ -326,7 +330,7 @@ hp.Map.prototype.createCell = function(cell) {
 };
 
 // A wrapper for createCell that adds interactivity to the individual cells.
-hp.Map.prototype.createInteractiveCell = function (cell) {
+Map.prototype.createInteractiveCell = function (cell) {
     var hex = this.createCell(cell);
     hex.hitArea = cell.poly;
     hex.interactive = true;
@@ -378,7 +382,7 @@ hp.Map.prototype.createInteractiveCell = function (cell) {
 };
 
 // Loads all the textures specified in options.
-hp.Map.prototype.loadTextures = function() {
+Map.prototype.loadTextures = function() {
     this.textures = [];
 
     if (this.options.textures.length) {
@@ -401,15 +405,15 @@ hp.Map.prototype.loadTextures = function() {
     }
 };
 
-// Clears out all objects from self.hexes.children.
-hp.Map.prototype.clearHexes = function () {
+// Clears out all objects from this.hexes.children.
+Map.prototype.clearHexes = function () {
     while (this.hexes.children.length) {
         this.hexes.removeChild(this.hexes.children[0]);
     }
 };
 
 // Resets the entire map without destroying the HexPixi.Map instance.
-hp.Map.prototype.reset = function (options) {
+Map.prototype.reset = function (options) {
     while (this.cells.length > 0) {
         while (this.cells[0].length > 0) {
             this.cells[0].splice(0, 1);
@@ -417,7 +421,7 @@ hp.Map.prototype.reset = function (options) {
         this.cells.splice(0, 1);
     }
 
-    clearHexes();
+    this.clearHexes();
 
     while (this.container.children.length > 0) {
         this.container.removeChildAt(0);
@@ -429,30 +433,30 @@ hp.Map.prototype.reset = function (options) {
         this.cellHighlighter = null;
     }
 
-    init(options);
+    this.init(this.pixiStage, options);
 };
 
-// Clears the scene graph and recreates it from self.cells.
-hp.Map.prototype.createSceneGraph = function() {
+// Clears the scene graph and recreates it from this.cells.
+Map.prototype.createSceneGraph = function() {
     var cell = null,
         row = null,
         rowIndex = 0,
         colIndex = 0;
 
-    clearHexes();
-    while (rowIndex < hp.Map.prototype..cells.length) {
-        row = hp.Map.prototype..cells[rowIndex];
+    this.clearHexes();
+    while (rowIndex < this.cells.length) {
+        row = this.cells[rowIndex];
         colIndex = 0;
         while (colIndex < row.length) {
             cell = row[colIndex];
-            hp.Map.prototype..hexes.addChild(this.createInteractiveCell(cell));
+            this.hexes.addChild(this.createInteractiveCell(cell));
             colIndex++;
         }
         rowIndex++;
     }
 };
 
-hp.Map.prototype.generateRandomMap = function () {
+Map.prototype.generateRandomMap = function () {
     var column, rnd, cell;
     for (var row = 0; row < this.options.mapHeight; row++) {
         this.cells.push([]);
@@ -470,7 +474,7 @@ hp.Map.prototype.generateRandomMap = function () {
     this.createSceneGraph();
 };
 
-hp.Map.prototype.generateBlankMap = function () {
+Map.prototype.generateBlankMap = function () {
     var column, cell;
     for (var row = 0; row < this.options.mapHeight; row++) {
         this.cells.push([]);
@@ -486,12 +490,12 @@ hp.Map.prototype.generateBlankMap = function () {
     this.createSceneGraph();
 };
 
-hp.Map.prototype.init = function(options) {
+Map.prototype.init = function(pixiStage, options) {
     this.options = extend(defaultOptions, options);
 
     // If we are overiding the top-down view method then need to force some settings
     if (this.options.hexWidth && this.options.hexHeight) {
-        var cs = hp.CoordinateSystems[this.options.coordinateSystem];
+        var cs = CoordinateSystems[this.options.coordinateSystem];
         this.options.hexSize = this.options.hexWidth / 2;
         this.aspectRatio = this.options.hexHeight / this.options.hexWidth;
         this.hexAxis.x = cs.isFlatTop ? this.options.hexWidth : ((1 - (Math.sqrt(3) / 2)) * this.options.hexWidth) + this.options.hexWidth;
@@ -511,7 +515,7 @@ hp.Map.prototype.init = function(options) {
     this.container.addChild(this.hexes);
     this.pixiStage.addChild(this.container);
     this.hexes.clear();
-    loadTextures();
+    this.loadTextures();
 
     // Setup cell hilighter
     var cell = new Cell(0, 0, 0);
