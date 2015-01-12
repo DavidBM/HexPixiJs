@@ -11,7 +11,7 @@ Use `/bin/hexpixi.js` file for the browser.
 
 node/browserify/CommonJS
 ------------------------
-Add this repository to your dependencies, do `npm install` and `require('hex-pixi-js');` in your code for .
+Add this repository to your dependencies, do `npm install` and `require('hex-pixi-js');` in your code.
 
 
 Disclaimer
