@@ -4,7 +4,8 @@ Basic Hex Grid For PixiJS. Version 0.30 (alpha).
 
 HexPixiJs is a simple library written to give hex grid based game developers a jump start. This library will be updated periodically but there is currently no roadmap of features. Feel free to request features.
 
-Use `/bin/hexpixi.js` for the browser. User require('hex-pixi-js'); for node/browserify/CommonJS.
+Use `/bin/hexpixi.js` file for the browser.
+Use `require('hex-pixi-js');` for node/browserify/CommonJS.
 
 
 Disclaimer
