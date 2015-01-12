@@ -1,0 +1,30 @@
+{
+  "name": "HexPixiJs",
+  "version": "0.4.0",
+  "description": "A free hex grid game library for pixijs",
+  "main": "scripts/hexpixi.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DavidBM/HexPixiJs.git"
+  },
+  "keywords": [
+    "hexagon",
+    "hex",
+    "pixijs",
+    "pixijs",
+    "pixi",
+    "grid"
+  ],
+  "author": "Mark Harmon",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DavidBM/HexPixiJs/issues"
+  },
+  "homepage": "https://github.com/DavidBM/HexPixiJs",
+  "devDependencies": {
+    "pixi.js": "^2.2.3"
+  }
+}
