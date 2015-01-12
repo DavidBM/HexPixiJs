@@ -535,8 +535,8 @@ function extend (obj) {
     Array.prototype.slice.call(arguments, 1).forEach(function (source) {
         if (source) {
             for (var prop in source) {
-                if (source[prop].constructor === Object) {
-                    if (!obj[prop] || obj[prop].constructor === Object) {
+                if (typeof source[prop] !== "undefined" && source[prop].constructor === Object) {
+                    if (typeof obj[prop] === "undefined" || obj[prop].constructor === Object) {
                         obj[prop] = obj[prop] || {};
                         this.extend(obj[prop], source[prop]);
                     } else {
