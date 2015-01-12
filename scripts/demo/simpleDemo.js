@@ -2,8 +2,8 @@
 /// <reference path="hexpixi.js" />
 (function (window) {
     'use strict';
-    var hp = window.HexPixi = window.HexPixi || {},
-        map = null,
+    var hp = require('../hexpixi.js');
+    var map = null,
         stage = new PIXI.Stage(0xe0e0e0),
         renderer = new PIXI.autoDetectRenderer(800, 600, {
             antialiasing: false,
