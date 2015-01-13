@@ -2,6 +2,8 @@
 var Cell = require('./hexpixicell.js');
 var pixiHelpers = require('./pixihelpers.js');
 var PIXI = require('pixi.js');
+var debugLog = require('debug')('hex-pixi-js:log');
+var debugError = require('debug')('hex-pixi-js:error');
 
 module.exports = exports = Map;
 
@@ -22,6 +24,7 @@ var defaultOptions = {
     mapHeight: 10,
     // The radius of the hex. Ignored if hexWidth and hexHeight are set to non-null.
     hexSize: 40,
+    drawHexSize: 40,
     // The pixel width of a hex.
     hexWidth: null,
     // The pixel height of a hex.
@@ -34,6 +37,11 @@ var defaultOptions = {
     showCoordinates: false,
     // Callback function (cell) that handles a hex being clicked on or tapped.
     onHexClick: null,
+    onHexHover: null,
+    dontBlurryImages: false,
+    sizeBasedOnTexture: false,
+    offsetX: 0,
+    offsetY: 0,
     // Specify the types of terrain available on the map. Map cells reference these terrain
     // types by index. Add custom properties to extend functionality.
     terrainTypes: [{ name: "empty", color: 0xffffff, isEmpty: true }],
@@ -57,6 +65,7 @@ function Map (pixiStage, options) {
     this.cellHighlighter = null;
     this.inCellCount = 0;
     this.hexAxis = { x: 0, y: 0 };
+    this.hexDrawAxis = { x: 0, y: 0 };
     this.aspectRatio = 1;
 
 
@@ -69,12 +78,12 @@ Map.prototype.setCellTerrainType = function (cell, terrainIndex) {
 };
 
 // Creates a hex shaped polygon that is used for the hex's hit area.
-Map.prototype.createHexPoly = function () {
+Map.prototype.createHexPoly = function (hexAxis) {
     var i = 0,
         cs = CoordinateSystems[this.options.coordinateSystem],
         offset = cs.isFlatTop ? 0 : 0.5,
         angle = 2 * Math.PI / 6 * offset,
-        center = { x: this.hexAxis.x / 2, y: this.hexAxis.y / 2 },
+        center = { x: hexAxis.x / 2, y: hexAxis.y / 2 },
         x = center.x * Math.cos(angle),
         y = center.y * Math.sin(angle),
         points = [];
@@ -89,7 +98,7 @@ Map.prototype.createHexPoly = function () {
         points.push(new PIXI.Point(x, y));
     }
 
-    console.log(points);
+    debugLog('Cell created', points);
 
     return new PIXI.Polygon(points);
 };
@@ -103,7 +112,7 @@ Map.prototype.createDrawHex_internal = function (cell, hasOutline, hasFill) {
         color = this.options.terrainTypes[cell.terrainIndex].color ? this.options.terrainTypes[cell.terrainIndex].color : 0xffffff;
 
     if (cell.poly === null) {
-        console.log("Cell's poly must first be defined by calling createHexPoly");
+        debugError("Cell's poly must first be defined by calling createHexPoly");
         return null;
     }
 
@@ -155,20 +164,16 @@ Map.prototype.createDrawnHex = function (cell) {
 // PIXI.DisplayObjectContainer. Hex outline (if there is one) is created and added to parent container.
 // Parent container is returned.
 Map.prototype.createTexturedHex = function (cell) {
-    var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].textureIndex]),
-        cs = CoordinateSystems[this.options.coordinateSystem],
-        parentContainer = new PIXI.DisplayObjectContainer(),
-        mask = null;
-
-    // Get the display object for the hex shape
-    mask = this.createDrawHex_internal(cell, false, true);
+    var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].textureIndex]);
+    var cs = CoordinateSystems[this.options.coordinateSystem];
+    var parentContainer = new PIXI.DisplayObjectContainer();
 
     sprite.anchor.x = 0.5;
     sprite.anchor.y = 0.5;
-    sprite.width = this.options.hexWidth;
-    sprite.height = this.options.hexHeight;
-    parentContainer.addChild(mask);
-    sprite.mask = mask;
+    if(!this.options.sizeBasedOnTexture){
+        sprite.width = this.options.hexWidth;
+        sprite.height = this.options.hexHeight;
+    }
     parentContainer.addChild(sprite);
 
     cell.inner = sprite;
@@ -287,6 +292,8 @@ Map.prototype.getCellCenter = function (column, row, coordinateSystem) {
     }
 
     //center.y -= this.options.hexBottomPad;
+    center.x += this.options.offsetX;
+    center.y += this.options.offsetY;
 
     return center;
 };
@@ -296,14 +303,8 @@ Map.prototype.createCell = function(cell) {
     cell.center = this.getCellCenter(cell.column, cell.row, this.options.coordinateSystem);
 
     // Generate poly first then use poly to draw hex and create masks and all that.
-    cell.poly = this.createHexPoly();
-
-    if (this.options.showCoordinates) {
-        cell.text = new PIXI.Text("1", { font: "10px Arial", fill: "black", dropShadow: "true", dropShadowDistance: 1, dropShadowColor: "white" });
-        cell.text.setText(cell.column.toString() + ", " + cell.row.toString());
-        cell.text.position.x = -Math.round((cell.text.width / 2));
-        cell.text.position.y = 8 - Math.round(this.options.hexHeight / 2);
-    }
+    cell.poly = this.createHexPoly(this.hexDrawAxis);
+    cell.hitPoly = this.createHexPoly(this.hexAxis);
 
     // Create the hex or textured hex
     var hex = null;
@@ -319,7 +320,26 @@ Map.prototype.createCell = function(cell) {
 
     // Text is a child of the display object container containing the hex.
     if (this.options.showCoordinates) {
+        cell.text = new PIXI.Text("1", { font: "10px Arial", fill: "black", dropShadow: "true", dropShadowDistance: 1, dropShadowColor: "white" });
+        cell.text.setText(
+            (3-(cell.row - (-cell.column - (-cell.column & 1)) / 2)).toString() +
+            ", " +
+            (cell.column).toString()
+        );
+        cell.text.position.x = -Math.round((cell.text.width / 2));
+        cell.text.position.y = 8 - Math.round(this.options.hexHeight / 2);
         hex.addChild(cell.text);
+    }
+
+    if(this.options.dontBlurryImages){
+        hex.position.x = Math.ceil(hex.position.x);
+        hex.position.y = Math.ceil(hex.position.y);
+
+        /*if(Math.round(hex.width) % 2 !== 0 )
+            hex.position.x += 0.5;
+
+        if(Math.round(hex.height) % 2 !== 0 )
+            hex.position.y += 0.5;*/
     }
 
     // Set a property on the hex that references the cell.
@@ -332,7 +352,7 @@ Map.prototype.createCell = function(cell) {
 // A wrapper for createCell that adds interactivity to the individual cells.
 Map.prototype.createInteractiveCell = function (cell) {
     var hex = this.createCell(cell);
-    hex.hitArea = cell.poly;
+    hex.hitArea = cell.hitPoly;
     hex.interactive = true;
     var _this = this;
 
@@ -350,6 +370,10 @@ Map.prototype.createInteractiveCell = function (cell) {
             cell.isOver = true;
             _this.inCellCount++;
         }
+
+        if (_this.options.onHexHover) {
+            _this.options.onHexHover(data.target.p_cell);
+        }
     };
 
     // set the mouseout callback..
@@ -363,6 +387,9 @@ Map.prototype.createInteractiveCell = function (cell) {
             }
 
             cell.isOver = false;
+        }
+        if (_this.options.onHexOut) {
+            _this.options.onHexOut(data.target.p_cell);
         }
     };
 
@@ -385,9 +412,30 @@ Map.prototype.createInteractiveCell = function (cell) {
 Map.prototype.loadTextures = function() {
     this.textures = [];
 
-    if (this.options.textures.length) {
+    var texturesStrings = [];
+    var i;
+
+    for (i = 0; i < this.options.textures.length; i++) {
+        if(typeof this.options.textures[i] === 'string' || this.options.textures[i] instanceof String ){
+            texturesStrings.push(this.options.textures[i]);
+        }
+    }
+
+    for (i = 0; i < this.options.textures.length; i++) {
+        if(this.options.textures[i] instanceof HTMLCanvasElement){
+            this.textures.push(new PIXI.Texture.fromCanvas(this.options.textures[i]));
+        }else if(typeof this.options.textures[i] === 'string' || this.options.textures[i] instanceof String){
+            this.textures.push(new PIXI.Texture.fromImage(this.options.textures[i]));
+        }else if(typeof this.options.textures[i]._uvs !== 'undefined'){
+            this.textures.push(this.options.textures[i]);
+        }else{
+            debugError('Error in texture loading! Format not compatible.');
+        }
+    }
+
+    if (texturesStrings.length > 0) {
         // create a new loader
-        var loader = new PIXI.AssetLoader(this.options.textures, true);
+        var loader = new PIXI.AssetLoader(texturesStrings, true);
 
         // use callback
         loader.onComplete = this.options.onAssetsLoaded;
@@ -395,9 +443,6 @@ Map.prototype.loadTextures = function() {
         //begin load
         loader.load();
 
-        for (var i = 0; i < this.options.textures.length; i++) {
-            this.textures.push(new PIXI.Texture.fromImage(this.options.textures[i]));
-        }
     } else {
         // No assets to load so just call onAssetsLoaded function to notify game that we are done.
         if(this.options.onAssetsLoaded)
@@ -478,15 +523,53 @@ Map.prototype.generateBlankMap = function () {
     var column, cell;
     for (var row = 0; row < this.options.mapHeight; row++) {
         this.cells.push([]);
-        for (column = 0; column < this.options.mapWidth; column+=2) {
+        for (column = 0; column < this.options.mapWidth; column += 2) {
             cell = new Cell(row, column, 0);
             this.cells[cell.row].push(cell);
         }
-        for (column = 1; column < this.options.mapWidth; column+=2) {
+        for (column = 1; column < this.options.mapWidth; column += 2) {
             cell = new Cell(row, column, 0);
             this.cells[cell.row].push(cell);
         }
     }
+    this.createSceneGraph();
+};
+
+Map.prototype.generateProceduralMap = function(callback) {
+    var type;
+    for (var row = 0; row < this.options.mapHeight; row++) {
+        this.cells.push([]);
+        for (column = 0; column < this.options.mapWidth; column += 2) {
+            type = callback(column, row);
+            cell = new Cell(row, column, type);
+            this.cells[cell.row].push(cell);
+        }
+        for (column = 1; column < this.options.mapWidth; column += 2) {
+            type = callback(column, row);
+            cell = new Cell(row, column, type);
+            this.cells[cell.row].push(cell);
+        }
+    }
+    this.createSceneGraph();
+};
+
+Map.prototype.changeTexture = function(index, image) {
+    if(image instanceof HTMLCanvasElement){
+
+        this.textures[index] = new PIXI.Texture.fromCanvas(image);
+
+    }else if(typeof image === 'string' || image instanceof String){
+
+        this.textures[index] = new PIXI.Texture.fromImage(image);
+
+    }else if(typeof this.options.textures[i]._uvs !== 'undefined'){
+
+        this.textures.push(this.options.textures[i]);
+
+    }else{
+        debugError('Error in texture loading! Format not compatible.');
+    }
+
     this.createSceneGraph();
 };
 
@@ -498,14 +581,16 @@ Map.prototype.init = function(pixiStage, options) {
         var cs = CoordinateSystems[this.options.coordinateSystem];
         this.options.hexSize = this.options.hexWidth / 2;
         this.aspectRatio = this.options.hexHeight / this.options.hexWidth;
-        this.hexAxis.x = cs.isFlatTop ? this.options.hexWidth : ((1 - (Math.sqrt(3) / 2)) * this.options.hexWidth) + this.options.hexWidth;
-        this.hexAxis.y = cs.isFlatTop ? ((1 - (Math.sqrt(3) / 2)) * this.options.hexHeight) + this.options.hexHeight : this.options.hexHeight;
+        this.hexDrawAxis.x = this.hexAxis.x = cs.isFlatTop ? this.options.hexWidth : ((1 - (Math.sqrt(3) / 2)) * this.options.hexWidth) + this.options.hexWidth;
+        this.hexDrawAxis.y = this.hexAxis.y = cs.isFlatTop ? ((1 - (Math.sqrt(3) / 2)) * this.options.hexHeight) + this.options.hexHeight : this.options.hexHeight;
     } else {
         this.aspectRatio = 1;
         this.options.hexWidth = this.getHexWidth();
         this.options.hexHeight = this.getHexHeight();
         this.hexAxis.x = this.options.hexSize * 2;
         this.hexAxis.y = this.options.hexSize * 2;
+        this.hexDrawAxis.x = this.options.drawHexSize * 2;
+        this.hexDrawAxis.y = this.options.drawHexSize * 2;
     }
 
     if (this.pixiStage === null) {
@@ -520,14 +605,14 @@ Map.prototype.init = function(pixiStage, options) {
     // Setup cell hilighter
     var cell = new Cell(0, 0, 0);
 
-    cell.poly = this.createHexPoly();
+    cell.poly = this.createHexPoly(this.hexDrawAxis);
     var chg = this.createDrawHex_internal(cell, true, false);
     if (chg) {
         pixiHelpers.updateLineStyle.call(chg, 3, 0xff5521);
         this.cellHighlighter = new PIXI.DisplayObjectContainer();
         this.cellHighlighter.addChild(chg);
     } else {
-        console.log("Error creating cell hilighter");
+        debugError("Error creating cell hilighter");
     }
 };
 
