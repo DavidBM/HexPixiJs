@@ -24,7 +24,8 @@
     "url": "https://github.com/DavidBM/HexPixiJs/issues"
   },
   "dependencies": {
-    "pixi.js": "^2.2.3"
+    "pixi.js": "^2.2.3",
+    "debug": "^2.1.1"
   },
   "homepage": "https://github.com/DavidBM/HexPixiJs",
   "devDependencies": {
