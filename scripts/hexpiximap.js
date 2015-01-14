@@ -359,11 +359,13 @@ Map.prototype.createInteractiveCell = function (cell) {
     // set the mouseover callback..
     hex.mouseover = function (data) {
         var cell = data.target.p_cell;
-        _this.cellHighlighter.position.x = cell.center.x;
-        _this.cellHighlighter.position.y = cell.center.y;
+        if(_this.cellHighlighter){
+            _this.cellHighlighter.position.x = cell.center.x;
+            _this.cellHighlighter.position.y = cell.center.y;
 
-        if (_this.inCellCount === 0) {
-            _this.hexes.addChild(_this.cellHighlighter);
+            if (_this.inCellCount === 0) {
+                _this.hexes.addChild(_this.cellHighlighter);
+            }
         }
 
         if (cell.isOver !== true) {
@@ -614,17 +616,19 @@ Map.prototype.init = function(pixiStage, options) {
     this.hexes.clear();
     this.loadTextures();
 
-    // Setup cell hilighter
-    var cell = new Cell(0, 0, 0);
+    if(this.options.hexLineWidth){
+        // Setup cell hilighter
+        var cell = new Cell(0, 0, 0);
 
-    cell.poly = this.createHexPoly(this.hexDrawAxis);
-    var chg = this.createDrawHex_internal(cell, true, false);
-    if (chg) {
-        pixiHelpers.updateLineStyle.call(chg, 3, 0xff5521);
-        this.cellHighlighter = new PIXI.DisplayObjectContainer();
-        this.cellHighlighter.addChild(chg);
-    } else {
-        debugError("Error creating cell hilighter");
+        cell.poly = this.createHexPoly(this.hexDrawAxis);
+        var chg = this.createDrawHex_internal(cell, true, false);
+        if (chg) {
+            pixiHelpers.updateLineStyle.call(chg, 3, 0xff5521);
+            this.cellHighlighter = new PIXI.DisplayObjectContainer();
+            this.cellHighlighter.addChild(chg);
+        } else {
+            debugError("Error creating cell hilighter");
+        }
     }
 };
 
