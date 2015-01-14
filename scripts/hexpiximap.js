@@ -575,6 +575,16 @@ Map.prototype.changeTexture = function(index, image) {
     this.createSceneGraph();
 };
 
+Map.prototype.changeCellTerrainIndex = function(cell, terrainIndex) {
+
+    cell.terrainIndex = terrainIndex;
+
+    var textureIndex = this.options.terrainTypes[cell.terrainIndex].textureIndex;
+    var texure = this.textures[textureIndex];
+
+    cell.inner.setTexture(texure);
+};
+
 Map.prototype.init = function(pixiStage, options) {
     this.options = extend(defaultOptions, options);
 
