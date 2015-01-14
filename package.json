@@ -24,8 +24,10 @@
     "url": "https://github.com/DavidBM/HexPixiJs/issues"
   },
   "dependencies": {
-    "pixi.js": "^2.2.3",
     "debug": "^2.1.1"
+  },
+  "peerDependencies": {
+    "pixi.js": "^2.2.3",
   },
   "homepage": "https://github.com/DavidBM/HexPixiJs",
   "devDependencies": {
@@ -40,3 +42,4 @@
     "vinyl-source-stream": "^1.0.0"
   }
 }
+
