@@ -372,7 +372,7 @@ Map.prototype.createInteractiveCell = function (cell) {
         }
 
         if (_this.options.onHexHover) {
-            _this.options.onHexHover(data.target.p_cell);
+            _this.options.onHexHover(_this, data.target.p_cell);
         }
     };
 
@@ -382,26 +382,26 @@ Map.prototype.createInteractiveCell = function (cell) {
         if (cell.isOver === true) {
             _this.inCellCount--;
 
-            if (_this.inCellCount === 0) {
+            if (_this.inCellCount === 0 && _this.cellHighlighter) {
                 _this.hexes.removeChild(_this.cellHighlighter);
             }
 
             cell.isOver = false;
         }
         if (_this.options.onHexOut) {
-            _this.options.onHexOut(data.target.p_cell);
+            _this.options.onHexOut(_this, data.target.p_cell);
         }
     };
 
     hex.click = function (data) {
         if (_this.options.onHexClick) {
-            _this.options.onHexClick(data.target.p_cell);
+            _this.options.onHexClick(_this, data.target.p_cell);
         }
     };
 
     hex.tap = function (data) {
         if (_this.options.onHexClick) {
-            _this.options.onHexClick(data.target.p_cell);
+            _this.options.onHexClick(_this, data.target.p_cell);
         }
     };
 
