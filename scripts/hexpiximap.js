@@ -507,12 +507,12 @@ Map.prototype.generateRandomMap = function () {
         this.cells.push([]);
         for (column = 0; column < this.options.mapWidth; column += 2) {
             rnd = Math.floor((Math.random() * this.options.terrainTypes.length));
-            cell = new Cell(row, column, rnd);
+            cell = new Cell(row, column, rnd, null);
             this.cells[cell.row].push(cell);
         }
         for (column = 1; column < this.options.mapWidth; column+=2) {
             rnd = Math.floor((Math.random() * this.options.terrainTypes.length));
-            cell = new Cell(row, column, rnd);
+            cell = new Cell(row, column, rnd, null);
             this.cells[cell.row].push(cell);
         }
     }
@@ -524,11 +524,11 @@ Map.prototype.generateBlankMap = function () {
     for (var row = 0; row < this.options.mapHeight; row++) {
         this.cells.push([]);
         for (column = 0; column < this.options.mapWidth; column += 2) {
-            cell = new Cell(row, column, 0);
+            cell = new Cell(row, column, 0, null);
             this.cells[cell.row].push(cell);
         }
         for (column = 1; column < this.options.mapWidth; column += 2) {
-            cell = new Cell(row, column, 0);
+            cell = new Cell(row, column, 0, null);
             this.cells[cell.row].push(cell);
         }
     }
