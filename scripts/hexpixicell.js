@@ -1,6 +1,6 @@
 
 // The HexPixi.Cell object represents one map hex cell.
-module.exports = exports = function (rowNo, columnNo, terrainIndex) {
+module.exports = exports = function (rowNo, columnNo, terrainIndex, cellData) {
     this.row = rowNo;
     this.column = columnNo;
     this.center = { x: 0, y: 0 };
@@ -10,6 +10,7 @@ module.exports = exports = function (rowNo, columnNo, terrainIndex) {
     this.inner = null; // If a non-textured cell then this is the PIXI.Graphics of the hex inner, otherwise a PIXI.Sprite.
     this.hex = null; // The parent container of the hex's graphics objects.
     this.isEmpty = null; // The cell is empty if set to true.
+    this.data = cellData;
 };
 
 exports.prototype.resetGraphics = function () {

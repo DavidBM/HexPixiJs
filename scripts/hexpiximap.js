@@ -536,21 +536,23 @@ Map.prototype.generateBlankMap = function () {
 };
 
 Map.prototype.generateProceduralMap = function(callback) {
-    var type;
     for (var row = 0; row < this.options.mapHeight; row++) {
         this.cells.push([]);
         for (column = 0; column < this.options.mapWidth; column += 2) {
-            type = callback(column, row);
-            cell = new Cell(row, column, type);
-            this.cells[cell.row].push(cell);
+            this.createProceduralCell(callback, column, row);
         }
         for (column = 1; column < this.options.mapWidth; column += 2) {
-            type = callback(column, row);
-            cell = new Cell(row, column, type);
-            this.cells[cell.row].push(cell);
+            this.createProceduralCell(callback, column, row);
         }
     }
     this.createSceneGraph();
+};
+
+Map.prototype.createProceduralCell = function(callback, column, row) {
+    var data = callback(column, row);
+    var cellData = (typeof data.data !== "undefined") ? data.data : null;
+    var cell = new Cell(row, column, data.type, cellData);
+    this.cells[cell.row].push(cell);
 };
 
 Map.prototype.changeTexture = function(index, image) {
