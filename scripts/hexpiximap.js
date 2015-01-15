@@ -335,11 +335,11 @@ Map.prototype.createCell = function(cell) {
         hex.position.x = Math.ceil(hex.position.x);
         hex.position.y = Math.ceil(hex.position.y);
 
-        /*if(Math.round(hex.width) % 2 !== 0 )
+        if(Math.round(hex.width) % 2 !== 0 )
             hex.position.x += 0.5;
 
         if(Math.round(hex.height) % 2 !== 0 )
-            hex.position.y += 0.5;*/
+            hex.position.y += 0.5;
     }
 
     // Set a property on the hex that references the cell.
