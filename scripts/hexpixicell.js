@@ -11,6 +11,7 @@ module.exports = exports = function (rowNo, columnNo, terrainIndex, cellData) {
     this.hex = null; // The parent container of the hex's graphics objects.
     this.isEmpty = null; // The cell is empty if set to true.
     this.data = cellData;
+    this.isOver = false;
 };
 
 exports.prototype.resetGraphics = function () {
