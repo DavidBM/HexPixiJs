@@ -562,7 +562,6 @@ exports.prototype.resetGraphics = function () {
 };
 
 },{}],8:[function(require,module,exports){
-
 var Cell = require('./hexpixicell.js');
 var pixiHelpers = require('./pixihelpers.js');
 var PIXI = require('pixi.js');
@@ -923,16 +922,17 @@ Map.prototype.createCell = function(cell) {
 };
 
 // A wrapper for createCell that adds interactivity to the individual cells.
-Map.prototype.createInteractiveCell = function (cell) {
-    var hex = this.createCell(cell);
-    hex.hitArea = cell.hitPoly;
+Map.prototype.createInteractiveCell = function (_cell) {
+    var hex = this.createCell(_cell);
+    hex.hitArea = _cell.hitPoly;
     hex.interactive = true;
     var _this = this;
 
     // set the mouseover callback..
     hex.mouseover = function (data) {
-        var cell = data.target.p_cell;
-        if(_this.cellHighlighter){
+        var cell = getEventCell(data);
+
+        if(cell && _this.cellHighlighter){
             _this.cellHighlighter.position.x = cell.center.x;
             _this.cellHighlighter.position.y = cell.center.y;
 
@@ -941,20 +941,20 @@ Map.prototype.createInteractiveCell = function (cell) {
             }
         }
 
-        if (cell.isOver !== true) {
+        if (cell && cell.isOver !== true) {
             cell.isOver = true;
             _this.inCellCount++;
         }
 
-        if (_this.options.onHexHover) {
-            _this.options.onHexHover(_this, data.target.p_cell);
+        if (cell && _this.options.onHexHover) {
+            _this.options.onHexHover(_this, cell);
         }
     };
 
     // set the mouseout callback..
     hex.mouseout = function (data) {
-        var cell = data.target.p_cell;
-        if (cell.isOver === true) {
+        var cell = getEventCell(data);
+        if (cell && cell.isOver === true) {
             _this.inCellCount--;
 
             if (_this.inCellCount === 0 && _this.cellHighlighter) {
@@ -963,25 +963,35 @@ Map.prototype.createInteractiveCell = function (cell) {
 
             cell.isOver = false;
         }
-        if (_this.options.onHexOut) {
-            _this.options.onHexOut(_this, data.target.p_cell);
+        if (cell && _this.options.onHexOut) {
+            _this.options.onHexOut(_this, cell);
         }
     };
 
     hex.click = function (data) {
-        if (_this.options.onHexClick) {
+        var cell = getEventCell(data);
+        if (cell && _this.options.onHexClick) {
             _this.options.onHexClick(_this, data.target.p_cell);
         }
     };
 
     hex.tap = function (data) {
-        if (_this.options.onHexClick) {
+        var cell = getEventCell(data);
+        if (cell && _this.options.onHexClick) {
             _this.options.onHexClick(_this, data.target.p_cell);
         }
     };
 
     return hex;
 };
+
+function getEventCell (event) {
+    var cell;
+    if(typeof event.target.p_cell !== 'undefined' && event.target.p_cell instanceof Cell)
+        cell = event.target.p_cell;
+    else
+        cell = false;
+}
 
 // Loads all the textures specified in options.
 Map.prototype.loadTextures = function() {
