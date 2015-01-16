@@ -422,11 +422,10 @@ Map.prototype.createInteractiveCell = function (_cell) {
 };
 
 function getEventCell (event) {
-    var cell;
     if(typeof event.target.p_cell !== 'undefined' && event.target.p_cell instanceof Cell)
-        cell = event.target.p_cell;
+        return event.target.p_cell;
     else
-        cell = false;
+        return false;
 }
 
 // Loads all the textures specified in options.
