@@ -308,14 +308,23 @@ Map.prototype.createCell = function(cell) {
 
     // Create the hex or textured hex
     var hex = null;
-    if (this.options.terrainTypes[cell.terrainIndex].isEmpty === true) {
+    var terrain = this.options.terrainTypes[cell.terrainIndex];
+
+    if (typeof terrain.isEmpty !== 'undefined' && terrain.isEmpty === true) {
+
         hex = this.createEmptyHex(cell);
-    } else if (this.options.terrainTypes[cell.terrainIndex].textureIndex >= 0) {
+
+    } else if (terrain.textureIndex >= 0) {
+
         hex = this.createTexturedHex(cell);
-    } else if (this.options.terrainTypes[cell.terrainIndex].tileIndex >= 0) {
+
+    } else if (terrain.tileIndex >= 0) {
+
         hex = this.createTileHex(cell);
+
     } else {
         hex = this.createDrawnHex(cell);
+
     }
 
     // Text is a child of the display object container containing the hex.
@@ -538,7 +547,8 @@ Map.prototype.generateBlankMap = function () {
 };
 
 Map.prototype.generateProceduralMap = function(callback) {
-    for (var row = 0; row < this.options.mapHeight; row++) {
+    var column, row;
+    for (row = 0; row < this.options.mapHeight; row++) {
         this.cells.push([]);
         for (column = 0; column < this.options.mapWidth; column += 2) {
             this.createProceduralCell(callback, column, row);
