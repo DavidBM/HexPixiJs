@@ -107,7 +107,6 @@ Map.prototype.createHexPoly = function (hexAxis) {
 Map.prototype.createDrawHex_internal = function (cell, hasOutline, hasFill) {
     var graphics = new PIXI.Graphics(),
         i = 0,
-        cs = CoordinateSystems[this.options.coordinateSystem],
         color = this.options.terrainTypes[cell.terrainIndex].color ? this.options.terrainTypes[cell.terrainIndex].color : 0xffffff;
 
     if (cell.poly === null) {
@@ -144,8 +143,9 @@ Map.prototype.createDrawHex_internal = function (cell, hasOutline, hasFill) {
 Map.prototype.createDrawnHex = function (cell) {
     var parentContainer = new PIXI.DisplayObjectContainer();
 
-    cell.inner = this.createDrawHex_internal(cell, false, true);
-    parentContainer.addChild(cell.inner);
+    var cellInner = this.createDrawHex_internal(cell, false, true);
+    cell.inner.push(cellInner);
+    parentContainer.addChild(cellInner);
 
     if (this.options.hexLineWidth > 0) {
         cell.outline = this.createDrawHex_internal(cell, true, false);
@@ -164,7 +164,6 @@ Map.prototype.createDrawnHex = function (cell) {
 // Parent container is returned.
 Map.prototype.createTexturedHex = function (cell) {
     var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].textureIndex]);
-    var cs = CoordinateSystems[this.options.coordinateSystem];
     var parentContainer = new PIXI.DisplayObjectContainer();
 
     sprite.anchor.x = 0.5;
@@ -175,7 +174,7 @@ Map.prototype.createTexturedHex = function (cell) {
     }
     parentContainer.addChild(sprite);
 
-    cell.inner = sprite;
+    cell.inner.push(sprite);
 
     if (this.options.hexLineWidth > 0) {
         cell.outline = this.createDrawHex_internal(cell, true, false);
@@ -188,11 +187,45 @@ Map.prototype.createTexturedHex = function (cell) {
     return parentContainer;
 };
 
+Map.prototype.createMultitextureHex = function (cell) {
+    var sprites = [];
+    var parentContainer = new PIXI.DisplayObjectContainer();
+
+    var len = cell.terrainIndex.length;
+    for (var i = 0; i < len.length; i++) {
+        var sprite = this.createSprite(cell.terrainIndex[i]);
+
+        parentContainer.addChild(sprite);
+        cell.inner.push(sprite);
+    }
+
+    parentContainer.position.x = cell.center.x;
+    parentContainer.position.y = cell.center.y;
+
+    return parentContainer;
+};
+
+Map.prototype.createSprite = function (terrainIndex) {
+
+    var terrainType = this.options.terrainTypes[terrainIndex];
+    var texture = this.textures[terrainType.textureIndex];
+    var sprite = new PIXI.Sprite(texture);
+
+    sprite.anchor.x = 0.5;
+    sprite.anchor.y = 0.5;
+
+    if(!this.options.sizeBasedOnTexture){
+        sprite.width = this.options.hexWidth;
+        sprite.height = this.options.hexHeight;
+    }
+
+    return sprite;
+};
+
 // Use for creating a hex cell with a textured background that stands on it's own. The hex outline will
 // bee added if options.hexLineWidth is greater than 0. Parent container is returned.
 Map.prototype.createTileHex = function (cell) {
     var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].tileIndex]),
-        cs = CoordinateSystems[this.options.coordinateSystem],
         parentContainer = new PIXI.DisplayObjectContainer(),
         mask = null,
         topPercent = 0.5;
@@ -206,7 +239,7 @@ Map.prototype.createTileHex = function (cell) {
 
     parentContainer.addChild(sprite);
 
-    cell.inner = sprite;
+    cell.inner.push(sprite);
 
     if (this.options.hexLineWidth > 0) {
         cell.outline = this.createDrawHex_internal(cell, true, false);
@@ -222,7 +255,7 @@ Map.prototype.createTileHex = function (cell) {
 Map.prototype.createEmptyHex = function (cell) {
     var parentContainer = new PIXI.DisplayObjectContainer();
 
-    cell.inner = null;
+    cell.inner = [];
 
     if (this.options.hexLineWidth > 0) {
         cell.outline = this.createDrawHex_internal(cell, true, false);
@@ -312,6 +345,10 @@ Map.prototype.createCell = function(cell) {
     if (typeof terrain.isEmpty !== 'undefined' && terrain.isEmpty === true) {
 
         hex = this.createEmptyHex(cell);
+
+    }else if (isArray(terrain.textureIndex)) {
+
+        hex = this.createMultitextureHex(cell);
 
     } else if (terrain.textureIndex >= 0) {
 
@@ -436,39 +473,58 @@ Map.prototype.loadTextures = function() {
     var i;
 
     for (i = 0; i < this.options.textures.length; i++) {
-        if(typeof this.options.textures[i] === 'string' || this.options.textures[i] instanceof String ){
+        var texture = createTexture(this.options.textures[i]);
+        if(texture)
+            this.textures.push(texture);
+    }
+
+    for (i = 0; i < this.options.textures.length; i++) {
+        if( isString(this.options.textures[i]) ) {
             texturesStrings.push(this.options.textures[i]);
         }
     }
 
-    for (i = 0; i < this.options.textures.length; i++) {
-        if(this.options.textures[i] instanceof HTMLCanvasElement){
-            this.textures.push(new PIXI.Texture.fromCanvas(this.options.textures[i]));
-        }else if(typeof this.options.textures[i] === 'string' || this.options.textures[i] instanceof String){
-            this.textures.push(new PIXI.Texture.fromImage(this.options.textures[i]));
-        }else if(typeof this.options.textures[i]._uvs !== 'undefined'){
-            this.textures.push(this.options.textures[i]);
-        }else{
-            debugError('Error in texture loading! Format not compatible.');
-        }
-    }
+    loadTexturesUrl(texturesStrings, this.options.onAssetsLoaded);
+};
 
+function loadTexturesUrl (texturesStrings, callback) {
     if (texturesStrings.length > 0) {
         // create a new loader
         var loader = new PIXI.AssetLoader(texturesStrings, true);
 
         // use callback
-        loader.onComplete = this.options.onAssetsLoaded;
+        loader.onComplete = callback;
 
         //begin load
         loader.load();
 
     } else {
         // No assets to load so just call onAssetsLoaded function to notify game that we are done.
-        if(this.options.onAssetsLoaded)
-            this.options.onAssetsLoaded();
+        if(typeof callback === 'function')
+            callback();
     }
-};
+}
+
+function createTexture (data) {
+    var texture = false;
+
+    if(data instanceof HTMLCanvasElement){
+        texture = new PIXI.Texture.fromCanvas(data);
+    }else if(typeof data === 'string' || data instanceof String){
+        texture = new PIXI.Texture.fromImage(data);
+    }else if(typeof data._uvs !== 'undefined'){
+        texture = data;
+    }else{
+        debugError('Error in texture loading! Format not compatible.');
+        texture = false;
+    }
+
+    return texture;
+}
+
+function isString (string) {
+    return (typeof string === 'string' || string instanceof String);
+}
 
 // Clears out all objects from this.hexes.children.
 Map.prototype.clearHexes = function () {
@@ -585,9 +641,9 @@ Map.prototype.changeTexture = function(index, image) {
 
         this.textures[index] = new PIXI.Texture.fromImage(image);
 
-    }else if(typeof this.options.textures[i]._uvs !== 'undefined'){
+    }else if(typeof image._uvs !== 'undefined'){
 
-        this.textures.push(this.options.textures[i]);
+        this.textures[index] = this.options.textures[i];
 
     }else{
         debugError('Error in texture loading! Format not compatible.');
@@ -596,14 +652,18 @@ Map.prototype.changeTexture = function(index, image) {
     this.createSceneGraph();
 };
 
-Map.prototype.changeCellTerrainIndex = function(cell, terrainIndex) {
+Map.prototype.changeCellTerrainIndex = function(cell, terrainIndex, layer) {
 
     cell.terrainIndex = terrainIndex;
 
     var textureIndex = this.options.terrainTypes[cell.terrainIndex].textureIndex;
     var texure = this.textures[textureIndex];
 
-    cell.inner.setTexture(texure);
+    if(cell.inner.length === 1)
+        cell.inner[0].setTexture(texure);
+    else
+        cell.inner[layer].setTexture(texure);
+
 };
 
 Map.prototype.init = function(pixiStage, options) {
