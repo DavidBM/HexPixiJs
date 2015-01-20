@@ -346,7 +346,7 @@ Map.prototype.createCell = function(cell) {
 
         hex = this.createEmptyHex(cell);
 
-    }else if (isArray(cell.textureIndex)) {
+    }else if (Array.isArray(cell.textureIndex)) {
 
         hex = this.createMultitextureHex(cell);
 
