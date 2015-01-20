@@ -71,11 +71,6 @@ function Map (pixiStage, options) {
     this.init(pixiStage, options);
 }
 
-Map.prototype.setCellTerrainType = function (cell, terrainIndex) {
-    cell.terrainIndex = terrainIndex;
-    this.createSceneGraph();
-};
-
 // Creates a hex shaped polygon that is used for the hex's hit area.
 Map.prototype.createHexPoly = function (hexAxis) {
     var i = 0,
@@ -192,8 +187,10 @@ Map.prototype.createMultitextureHex = function (cell) {
     var parentContainer = new PIXI.DisplayObjectContainer();
 
     var len = cell.terrainIndex.length;
-    for (var i = 0; i < len.length; i++) {
-        var sprite = this.createSprite(cell.terrainIndex[i]);
+    for (var i = 0; i < len; i++) {
+
+        var terrain = this.options.terrainTypes[cell.terrainIndex[i]];
+        var sprite = this.createSprite(terrain);
 
         parentContainer.addChild(sprite);
         cell.inner.push(sprite);
@@ -201,13 +198,11 @@ Map.prototype.createMultitextureHex = function (cell) {
 
     parentContainer.position.x = cell.center.x;
     parentContainer.position.y = cell.center.y;
-
     return parentContainer;
 };
 
-Map.prototype.createSprite = function (terrainIndex) {
+Map.prototype.createSprite = function (terrainType) {
 
-    var terrainType = this.options.terrainTypes[terrainIndex];
     var texture = this.textures[terrainType.textureIndex];
     var sprite = new PIXI.Sprite(texture);
 
@@ -340,27 +335,20 @@ Map.prototype.createCell = function(cell) {
 
     // Create the hex or textured hex
     var hex = null;
-    var terrain = this.options.terrainTypes[cell.terrainIndex];
 
-    if (typeof terrain.isEmpty !== 'undefined' && terrain.isEmpty === true) {
-
-        hex = this.createEmptyHex(cell);
-
-    }else if (Array.isArray(cell.textureIndex)) {
-
+    if (Array.isArray(cell.terrainIndex)) {
         hex = this.createMultitextureHex(cell);
-
-    } else if (terrain.textureIndex >= 0) {
-
-        hex = this.createTexturedHex(cell);
-
-    } else if (terrain.tileIndex >= 0) {
-
-        hex = this.createTileHex(cell);
-
-    } else {
-        hex = this.createDrawnHex(cell);
-
+    }else{
+        var terrain = this.options.terrainTypes[cell.terrainIndex];
+        if (typeof terrain.isEmpty !== 'undefined' && terrain.isEmpty === true) {
+            hex = this.createEmptyHex(cell);
+        }else if (terrain.textureIndex >= 0) {
+            hex = this.createTexturedHex(cell);
+        } else if (terrain.tileIndex >= 0) {
+            hex = this.createTileHex(cell);
+        } else {
+            hex = this.createDrawnHex(cell);
+        }
     }
 
     // Text is a child of the display object container containing the hex.
@@ -643,7 +631,7 @@ Map.prototype.changeTexture = function(index, image) {
 
     }else if(typeof image._uvs !== 'undefined'){
 
-        this.textures[index] = this.options.textures[i];
+        this.textures[index] = this.options.textures[index];
 
     }else{
         debugError('Error in texture loading! Format not compatible.');
@@ -652,18 +640,14 @@ Map.prototype.changeTexture = function(index, image) {
     this.createSceneGraph();
 };
 
-Map.prototype.changeCellTerrainIndex = function(cell, terrainIndex, layer) {
+Map.prototype.changeCellTerrainIndexInLayer = function(cell, newTerrainIndex, layer) {
+    var terrainIndex = cell.terrainIndex[layer];
 
-    cell.terrainIndex = terrainIndex;
-
-    var textureIndex = this.options.terrainTypes[cell.terrainIndex].textureIndex;
+    var textureIndex = this.options.terrainTypes[newTerrainIndex].textureIndex;
     var texure = this.textures[textureIndex];
 
-    if(cell.inner.length === 1)
-        cell.inner[0].setTexture(texure);
-    else
-        cell.inner[layer].setTexture(texure);
-
+    cell.terrainIndex[layer] = newTerrainIndex;
+    cell.inner[layer].setTexture(texure);
 };
 
 Map.prototype.init = function(pixiStage, options) {
