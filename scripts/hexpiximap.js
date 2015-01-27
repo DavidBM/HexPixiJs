@@ -622,9 +622,11 @@ Map.prototype.createProceduralCell = function(callback, column, row) {
 
 Map.prototype.search = function(callback) {
     for (var i = this.cells.length - 1; i >= 0; i--) {
-        var cell = this.cells[i];
-        if(callback(cell))
-            return cell;
+        for (var j = this.cells[i].length - 1; j >= 0; j--) {
+            var cell = this.cells[i][j];
+            if(callback(cell))
+                return cell;
+        }
     }
 
     return false;
