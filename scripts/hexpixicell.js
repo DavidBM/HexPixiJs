@@ -4,7 +4,7 @@ module.exports = exports = function (rowNo, columnNo, terrainIndex, cellData) {
     this.row = rowNo;
     this.column = columnNo;
     this.center = { x: 0, y: 0 };
-    this.terrainIndex = terrainIndex ? terrainIndex : [0];
+    this.terrainIndex = terrainIndex ? terrainIndex : 0;
     this.poly = null; // The cell's poly that is used as a hit area.
     this.outline = null; // The PIXI.Graphics outline of the cell's hex.
     this.inner = []; // If a non-textured cell then this is the PIXI.Graphics of the hex inner, otherwise a PIXI.Sprite.

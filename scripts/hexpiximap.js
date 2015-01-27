@@ -620,6 +620,16 @@ Map.prototype.createProceduralCell = function(callback, column, row) {
     this.cells[cell.row].push(cell);
 };
 
+Map.prototype.search = function(callback) {
+    for (var i = this.cells.length - 1; i >= 0; i--) {
+        var cell = this.cells[i];
+        if(callback(cell))
+            return cell;
+    }
+
+    return false;
+};
+
 Map.prototype.changeTexture = function(index, image) {
     if(image instanceof HTMLCanvasElement){
 
