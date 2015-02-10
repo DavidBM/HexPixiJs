@@ -288,10 +288,10 @@ Map.prototype.getHexHeight = function () {
 };
 
 // Calculate the center of a cell based on column, row and coordinate system.
-Map.prototype.getCellCenter = function (column, row, coordinateSystem) {
+Map.prototype.getCellCenter = function (column, row) {
     var incX = 0.75 * this.options.hexWidth,
         incY = this.options.hexHeight,
-        cs = CoordinateSystems[coordinateSystem],
+        cs = CoordinateSystems[this.options.coordinateSystem],
         center = { x: 0, y: 0 },
         offset = (cs.isOdd) ? 0 : 1;
 
@@ -327,7 +327,7 @@ Map.prototype.getCellCenter = function (column, row, coordinateSystem) {
 
 // Takes a cell and creates all the graphics to display it.
 Map.prototype.createCell = function(cell) {
-    cell.center = this.getCellCenter(cell.column, cell.row, this.options.coordinateSystem);
+    cell.center = this.getCellCenter(cell.column, cell.row);
 
     // Generate poly first then use poly to draw hex and create masks and all that.
     cell.poly = this.createHexPoly(this.hexDrawAxis);
