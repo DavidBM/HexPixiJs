@@ -1,8 +1,8 @@
 var Cell = require('./hexpixicell.js');
 var pixiHelpers = require('./pixihelpers.js');
 var PIXI = require('pixi.js');
-var debugLog = require('debug')('hex-pixi-js:log');
-var debugError = require('debug')('hex-pixi-js:error');
+var debugLog = require('debug')('hexPixiJs:log');
+var debugError = require('debug')('hexPixiJs:error');
 
 module.exports = exports = Map;
 
