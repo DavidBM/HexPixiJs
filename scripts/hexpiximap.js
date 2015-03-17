@@ -82,19 +82,19 @@ Map.prototype.createHexPoly = function (hexAxis) {
         y = center.y * Math.sin(angle),
         points = [];
 
-    points.push(new PIXI.Point(x, y));
+    points.push(new PIXI.math.Point(x, y));
 
     for (i = 1; i < 7; i++) {
         angle = 2 * Math.PI / 6 * (i + offset);
         x = center.x * Math.cos(angle);
         y = center.y * Math.sin(angle);
 
-        points.push(new PIXI.Point(x, y));
+        points.push(new PIXI.math.Point(x, y));
     }
 
     debugLog('Cell created', points);
 
-    return new PIXI.Polygon(points);
+    return new PIXI.math.Polygon(points);
 };
 
 // Creates a drawn hex while ignoring the cell's position. A new PIXI.Graphics object is created

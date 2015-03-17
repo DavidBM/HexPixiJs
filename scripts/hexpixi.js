@@ -1,8 +1,5 @@
-﻿/// <reference path="../vend/pixi-addons.js" />
-/// <reference path="vend/pixi.dev.js" />
-/*
-    HexPixi (alpha)
-    Version 0.30
+﻿/*
+    HexPixi
     by Mark Harmon 2014
     A free hex game library for pixijs.
     Released under MIT License.

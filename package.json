@@ -1,6 +1,6 @@
 {
   "name": "hex-pixi-js",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A free hex grid game library for pixijs",
   "main": "scripts/hexpixi.js",
   "scripts": {
@@ -27,7 +27,7 @@
     "debug": "^2.1.1"
   },
   "peerDependencies": {
-    "pixi.js": "^2.2.3"
+    "pixi.js": "^3.0.0"
   },
   "homepage": "https://github.com/DavidBM/HexPixiJs",
   "devDependencies": {
