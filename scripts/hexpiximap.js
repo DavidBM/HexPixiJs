@@ -354,11 +354,7 @@ Map.prototype.createCell = function(cell) {
     // Text is a child of the display object container containing the hex.
     if (this.options.showCoordinates) {
         cell.text = new PIXI.Text("1", { font: "10px Arial", fill: "black", dropShadow: "true", dropShadowDistance: 1, dropShadowColor: "white" });
-        cell.text.setText(
-            (3-(cell.row - (-cell.column - (-cell.column & 1)) / 2)).toString() +
-            ", " +
-            (cell.column).toString()
-        );
+        cell.text.text = (3-(cell.row - (-cell.column - (-cell.column & 1)) / 2)).toString() + ", " + (cell.column).toString();
         cell.text.position.x = -Math.round((cell.text.width / 2));
         cell.text.position.y = 8 - Math.round(this.options.hexHeight / 2);
         hex.addChild(cell.text);
