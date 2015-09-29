@@ -57,7 +57,7 @@ function Map (pixiStage, options) {
 
     this.textures = [];
     this.hexes = new PIXI.Graphics();
-    this.container = new PIXI.DisplayObjectContainer();
+    this.container = new PIXI.Container();
     this.pixiStage = null;
     this.options = null;
     this.cells = [];
@@ -82,19 +82,19 @@ Map.prototype.createHexPoly = function (hexAxis) {
         y = center.y * Math.sin(angle),
         points = [];
 
-    points.push(new PIXI.math.Point(x, y));
+    points.push(new PIXI.Point(x, y));
 
     for (i = 1; i < 7; i++) {
         angle = 2 * Math.PI / 6 * (i + offset);
         x = center.x * Math.cos(angle);
         y = center.y * Math.sin(angle);
 
-        points.push(new PIXI.math.Point(x, y));
+        points.push(new PIXI.Point(x, y));
     }
 
     debugLog('Cell created', points);
 
-    return new PIXI.math.Polygon(points);
+    return new PIXI.Polygon(points);
 };
 
 // Creates a drawn hex while ignoring the cell's position. A new PIXI.Graphics object is created
@@ -134,9 +134,9 @@ Map.prototype.createDrawHex_internal = function (cell, hasOutline, hasFill) {
 };
 
 // Used for manually drawing a hex cell. Creates the filled in hex, creates the outline (if there is one)
-// and then wraps them in a PIXI.DisplayObjectContainer.
+// and then wraps them in a PIXI.Container.
 Map.prototype.createDrawnHex = function (cell) {
-    var parentContainer = new PIXI.DisplayObjectContainer();
+    var parentContainer = new PIXI.Container();
 
     var cellInner = this.createDrawHex_internal(cell, false, true);
     cell.inner.push(cellInner);
@@ -155,11 +155,11 @@ Map.prototype.createDrawnHex = function (cell) {
 
 // Use for creating a hex cell with a textured background. First creates a PIXI.Graphics of the hex shape.
 // Next creates a PIXI.Sprite and uses the PIXI.Graphics hex as a mask. Masked PIXI.Sprite is added to parent
-// PIXI.DisplayObjectContainer. Hex outline (if there is one) is created and added to parent container.
+// PIXI.Container. Hex outline (if there is one) is created and added to parent container.
 // Parent container is returned.
 Map.prototype.createTexturedHex = function (cell) {
     var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].textureIndex]);
-    var parentContainer = new PIXI.DisplayObjectContainer();
+    var parentContainer = new PIXI.Container();
 
     sprite.anchor.x = 0.5;
     sprite.anchor.y = 0.5;
@@ -184,7 +184,7 @@ Map.prototype.createTexturedHex = function (cell) {
 
 Map.prototype.createMultitextureHex = function (cell) {
     var sprites = [];
-    var parentContainer = new PIXI.DisplayObjectContainer();
+    var parentContainer = new PIXI.Container();
 
     var len = cell.terrainIndex.length;
     for (var i = 0; i < len; i++) {
@@ -221,7 +221,7 @@ Map.prototype.createSprite = function (terrainType) {
 // bee added if options.hexLineWidth is greater than 0. Parent container is returned.
 Map.prototype.createTileHex = function (cell) {
     var sprite = new PIXI.Sprite(this.textures[this.options.terrainTypes[cell.terrainIndex].tileIndex]),
-        parentContainer = new PIXI.DisplayObjectContainer(),
+        parentContainer = new PIXI.Container(),
         mask = null,
         topPercent = 0.5;
 
@@ -248,7 +248,7 @@ Map.prototype.createTileHex = function (cell) {
 };
 
 Map.prototype.createEmptyHex = function (cell) {
-    var parentContainer = new PIXI.DisplayObjectContainer();
+    var parentContainer = new PIXI.Container();
 
     cell.inner = [];
 
@@ -695,7 +695,7 @@ Map.prototype.init = function(pixiStage, options) {
         var chg = this.createDrawHex_internal(cell, true, false);
         if (chg) {
             pixiHelpers.updateLineStyle.call(chg, 3, 0xff5521);
-            this.cellHighlighter = new PIXI.DisplayObjectContainer();
+            this.cellHighlighter = new PIXI.Container();
             this.cellHighlighter.addChild(chg);
         } else {
             debugError("Error creating cell hilighter");
