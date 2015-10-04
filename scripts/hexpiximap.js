@@ -655,7 +655,7 @@ Map.prototype.changeCellTerrainIndexInLayer = function(cell, newTerrainIndex, la
     var texure = this.textures[textureIndex];
 
     cell.terrainIndex[layer] = newTerrainIndex;
-    cell.inner[layer].setTexture(texure);
+    cell.inner[layer].texture = texure;
 };
 
 Map.prototype.init = function(pixiStage, options) {
